@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './index.css';
+import Controls from './components/Controls';
 
 const STORAGE_KEYS = {
   hue: 'sv_hue',
@@ -18,11 +19,11 @@ function usePersistedNumber(key: string, initial: number) {
 }
 
 export default function App() {
+  console.log('[App] rendering with controls');
   const [hue, setHue] = usePersistedNumber(STORAGE_KEYS.hue, 0.6);
   const [speed, setSpeed] = usePersistedNumber(STORAGE_KEYS.speed, 1.0);
   const [intensity, setIntensity] = usePersistedNumber(STORAGE_KEYS.intensity, 1.0);
-
-  const handleReset = () => {
+  const onReset = () => {
     setHue(0.6);
     setSpeed(1.0);
     setIntensity(1.0);
@@ -42,66 +43,15 @@ export default function App() {
         <canvas id="shader-canvas" className="shader-canvas" />
       </div>
 
-      <div id="controls-fixed">
-        <div className="controls-row">
-          <details open>
-            <summary>Colors</summary>
-            <div className="control">
-              <label htmlFor="hue">Hue: {hue.toFixed(2)}</label>
-              <input
-                id="hue"
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={hue}
-                onChange={(e) => setHue(parseFloat(e.target.value))}
-              />
-            </div>
-          </details>
-
-        </div>
-
-        <div className="controls-row">
-          <details open>
-            <summary>Motion</summary>
-            <div className="control">
-              <label htmlFor="speed">Speed: {speed.toFixed(2)}</label>
-              <input
-                id="speed"
-                type="range"
-                min={0}
-                max={5}
-                step={0.01}
-                value={speed}
-                onChange={(e) => setSpeed(parseFloat(e.target.value))}
-              />
-            </div>
-          </details>
-        </div>
-
-        <div className="controls-row">
-          <details open>
-            <summary>FX</summary>
-            <div className="control">
-              <label htmlFor="intensity">Intensity: {intensity.toFixed(2)}</label>
-              <input
-                id="intensity"
-                type="range"
-                min={0}
-                max={2}
-                step={0.01}
-                value={intensity}
-                onChange={(e) => setIntensity(parseFloat(e.target.value))}
-              />
-            </div>
-          </details>
-        </div>
-
-        <div className="controls-actions">
-          <button type="button" className="reset-btn" onClick={handleReset}>Reset</button>
-        </div>
-      </div>
+      <Controls
+        hue={hue}
+        speed={speed}
+        intensity={intensity}
+        setHue={setHue}
+        setSpeed={setSpeed}
+        setIntensity={setIntensity}
+        onReset={onReset}
+      />
     </div>
   );
 }
