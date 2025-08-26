@@ -21,37 +21,6 @@ body {
 }
 .shader-canvas { display:block; width:100%; height:auto; }
 
-.controls-panel details { margin-top: 10px; }
-.controls-panel summary { cursor: pointer; font-size: 18px; }
-.controls-panel .row { padding: 10px 0 4px; }
-.controls-panel label { display: block; margin-bottom: 6px; font-size: 16px; }
-.controls-panel input[type="range"] { width: 100%; }
-
-.ui-layer {
-  z-index: 100000;
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 56px;
-}
-
-.controls-bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 64px;
-  z-index: 1000;
-  backdrop-filter: blur(10px);
-  background: rgba(10,10,10,0.7);
-  border-top: 1px solid rgba(255,255,255,0.12);
-}
-.controls-bar__content {
-  max-width: 980px;
-  margin: 0 auto;
-  height: 100%;
-  padding: 0 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+.controls-bar{position:fixed;left:0;right:0;bottom:0;z-index:1000;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);border-top:1px solid rgba(255,255,255,.15);padding:12px}
+.controls-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+button.reset{border:1px solid #999;padding:6px 10px;border-radius:6px;background:#222;color:#fff}
