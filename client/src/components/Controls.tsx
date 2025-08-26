@@ -56,8 +56,15 @@ export default function Controls({ state, onChange, onReset }: Props) {
       </details>
 
       <div className="actions">
-        <button onClick={onReset}>Reset</button>
-        <button onClick={() => navigator.clipboard.writeText(location.href)}>Copy Link</button>
+        <button
+          onClick={onReset}
+          style={{ marginTop: "20px", padding: "8px 16px", fontSize: "16px" }}
+        >
+          Reset
+        </button>
+        <button onClick={() => navigator.clipboard.writeText(location.href)}>
+          Copy Link
+        </button>
       </div>
     </div>
   )
