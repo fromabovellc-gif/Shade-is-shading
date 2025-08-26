@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import "./index.css"
 import Controls from "./components/Controls"
+import ResetButton from "./components/ResetButton"
 import type { AppState } from "./types"
 import { defaults, initialState, writeLocal, writeToUrl } from "./lib/state"
 
@@ -24,18 +25,21 @@ export default function App() {
   }, [state])
 
   return (
-    <div className="page">
-      <div className="stage" style={{ backgroundImage: gradient, animationDuration: `${Math.max(0.2, 3 - state.speed)}s` }} />
-      <Controls
-        state={state}
-        onChange={(next) => setState((s) => ({ ...s, ...next }))}
-        onReset={() => {
-          setState(defaults)
-          history.replaceState(null, "", location.pathname)
-          localStorage.removeItem("shadervibe:state:v1")
-        }}
-      />
-    </div>
+    <>
+      <div className="page">
+        <div className="stage" style={{ backgroundImage: gradient, animationDuration: `${Math.max(0.2, 3 - state.speed)}s` }} />
+        <Controls
+          state={state}
+          onChange={(next) => setState((s) => ({ ...s, ...next }))}
+          onReset={() => {
+            setState(defaults)
+            history.replaceState(null, "", location.pathname)
+            localStorage.removeItem("shadervibe:state:v1")
+          }}
+        />
+      </div>
+      <ResetButton />
+    </>
   )
 }
 
