@@ -1,51 +1,66 @@
-import React, { useEffect } from "react";
-import Controls from "./components/Controls";
-import DebugOverlay from "./components/DebugOverlay";
-import ResetButton from "./components/ResetButton";
-import "./index.css";
+import React from 'react';
+import Controls from './components/Controls';
+import './index.css';
 
 export default function App() {
-  useEffect(() => {
-    console.log("[App] ACTIVE", new Date().toISOString());
+  console.log('[App ACTIVE]', new Date().toISOString());
+
+  const [hue, setHue] = React.useState(0.5);
+  const [speed, setSpeed] = React.useState(1.0);
+  const [intensity, setIntensity] = React.useState(1.0);
+
+  React.useEffect(() => {
+    const H = parseFloat(localStorage.getItem('hue') ?? '');
+    if (!Number.isNaN(H)) setHue(H);
+    const S = parseFloat(localStorage.getItem('speed') ?? '');
+    if (!Number.isNaN(S)) setSpeed(S);
+    const I = parseFloat(localStorage.getItem('intensity') ?? '');
+    if (!Number.isNaN(I)) setIntensity(I);
   }, []);
+  React.useEffect(() => { localStorage.setItem('hue', String(hue)); }, [hue]);
+  React.useEffect(() => { localStorage.setItem('speed', String(speed)); }, [speed]);
+  React.useEffect(() => { localStorage.setItem('intensity', String(intensity)); }, [intensity]);
+
+  const onReset = () => {
+    localStorage.removeItem('hue');
+    localStorage.removeItem('speed');
+    localStorage.removeItem('intensity');
+    window.location.reload();
+  };
 
   return (
     <div className="app">
-      <h1 style={{ color: "magenta" }}>APP SHELL LOADED</h1>
       <div className="canvas-wrap">
-        <canvas id="shader-canvas" className="shader-canvas"></canvas>
+        <canvas
+          id="shader-canvas"
+          className="shader-canvas"
+          style={{ position: 'relative', zIndex: 1 }}
+        ></canvas>
       </div>
+
+      <Controls
+        valueHue={hue} onHue={setHue}
+        valueSpeed={speed} onSpeed={setSpeed}
+        valueIntensity={intensity} onIntensity={setIntensity}
+        onReset={onReset}
+      />
+
       <div
         style={{
-          position: "fixed",
-          left: 0,
-          right: 0,
-          bottom: "56px",
-          padding: "12px 16px",
-          zIndex: 100000,
-          pointerEvents: "auto",
-          background: "rgba(0,0,0,.75)",
-          color: "#fff",
-        }}
-      >
-        <Controls />
-      </div>
-      <ResetButton />
-      <div
-        style={{
-          position: "fixed",
+          position: 'fixed',
           right: 8,
           bottom: 8,
-          zIndex: 999999,
-          background: "#0bf",
-          color: "#000",
-          padding: "6px 8px",
+          zIndex: 2147483647,
+          background: '#0ff',
+          color: '#000',
+          padding: '6px 8px',
           fontSize: 12,
+          borderRadius: 6,
+          boxShadow: '0 0 6px rgba(0,0,0,.4)'
         }}
       >
         ACTIVE CLIENT
       </div>
-      <DebugOverlay />
     </div>
   );
 }
