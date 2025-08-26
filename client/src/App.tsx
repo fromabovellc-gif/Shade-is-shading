@@ -43,16 +43,18 @@ export default function App() {
   };
 
   return (
-    <div className="app">
+    <div id="app">
       <div className="canvas-wrap">
         <canvas id="shader-canvas" className="shader-canvas"></canvas>
       </div>
-      <Controls
-        hue={hue} onHue={setHue}
-        speed={speed} onSpeed={setSpeed}
-        intensity={intensity} onIntensity={setIntensity}
-        onReset={onReset}
-      />
+      <div id="controls-fixed">
+        <Controls
+          hue={hue} onHue={setHue}
+          speed={speed} onSpeed={setSpeed}
+          intensity={intensity} onIntensity={setIntensity}
+          onReset={onReset}
+        />
+      </div>
     </div>
   );
 }

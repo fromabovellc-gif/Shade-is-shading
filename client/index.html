@@ -6,6 +6,19 @@
     <title>ShaderVibe</title>
   </head>
   <body>
+    <div id="entry-debug-banner">ENTRY DEBUG: client/index.html :5173</div>
+    <script>
+      console.log("[ENTRY DEBUG] HTML path:", location.pathname);
+      window.__ENTRY_DEBUG__ = "client/index.html";
+    </script>
+    <style>
+      #entry-debug-banner{
+        position:fixed;top:0;left:0;right:0;z-index:2147483647;
+        background:#111;color:#0f0;border-bottom:1px solid #0f0;
+        padding:6px 10px;font:12px/1.2 monospace
+      }
+      body{margin-top:28px}
+    </style>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
