@@ -87,3 +87,6 @@ button.reset{border:1px solid #999;padding:6px 10px;border-radius:6px;background
   cursor: pointer;
 }
 .reset-btn:hover { opacity: 0.9; }
+.controls-actions{ display:flex; justify-content:flex-end; margin-top:8px; }
+.reset-btn{ background:#fff; color:#000; border:none; padding:8px 12px; border-radius:6px; font-weight:600; cursor:pointer; }
+.reset-btn:hover{ opacity:.9; }
