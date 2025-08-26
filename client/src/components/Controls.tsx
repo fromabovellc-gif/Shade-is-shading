@@ -47,8 +47,8 @@ export default function Controls({ hue, speed, intensity, onHue, onSpeed, onInte
             onChange={(e) => onIntensity(parseFloat(e.target.value))}
           />
         </label>
-        <button className="reset" onClick={onReset}>Reset</button>
       </div>
+      <button className="reset" onClick={onReset}>Reset</button>
     </div>
   );
 }
