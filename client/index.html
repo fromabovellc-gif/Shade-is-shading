@@ -8,5 +8,14 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <button id="sv-reset" style="position:fixed;right:16px;bottom:16px;z-index:9999;padding:10px 14px;background:#111;color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:10px;font:600 14px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.35);">
+      Reset
+    </button>
+    <script>
+      document.getElementById('sv-reset').addEventListener('click', function () {
+        ['sv_hue','sv_speed','sv_intensity'].forEach(function(k){ localStorage.removeItem(k); });
+        location.reload();
+      });
+    </script>
   </body>
 </html>
