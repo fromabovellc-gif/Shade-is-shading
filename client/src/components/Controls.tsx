@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { resetControls } from "../lib/resetControls";
 
 const read = (k: string, d: number) => {
   const v = localStorage.getItem(k);
@@ -6,10 +7,15 @@ const read = (k: string, d: number) => {
 };
 const write = (k: string, v: number) => localStorage.setItem(k, String(v));
 
-export default function Controls() {
+function Controls() {
   const [hue, setHue] = useState(read("hue", 0.6));
   const [speed, setSpeed] = useState(read("speed", 1.0));
   const [intensity, setIntensity] = useState(read("intensity", 1.0));
+
+  useEffect(() => {
+    (window as any).__controlsMounted = true;
+    console.log("[Controls] mounted");
+  }, []);
 
   useEffect(() => write("hue", hue), [hue]);
   useEffect(() => write("speed", speed), [speed]);
@@ -19,25 +25,11 @@ export default function Controls() {
     setHue(0.6);
     setSpeed(1.0);
     setIntensity(1.0);
-    localStorage.removeItem("hue");
-    localStorage.removeItem("speed");
-    localStorage.removeItem("intensity");
+    resetControls();
   };
 
   return (
-    <div
-      className="controls-panel"
-      style={{
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        width: "100%",
-        background: "rgba(0, 0, 0, 0.8)",
-        color: "#fff",
-        padding: "16px",
-        zIndex: 1000,
-      }}
-    >
+    <div className="controls-panel">
       <details>
         <summary>Colors</summary>
         <div className="row">
@@ -83,8 +75,9 @@ export default function Controls() {
         </div>
       </details>
 
-      <div style={{ color: "red" }}>RESET TEST BUTTON</div>
       <button className="reset-btn" onClick={resetAll}>Reset</button>
     </div>
   );
 }
+
+export default Controls;
