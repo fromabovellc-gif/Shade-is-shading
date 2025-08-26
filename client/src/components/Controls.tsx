@@ -25,60 +25,66 @@ export default function Controls() {
   };
 
   return (
-    <>
-      <div className="controls-panel">
-        <details>
-          <summary>Colors</summary>
-          <div className="row">
-            <label>Hue: {hue.toFixed(2)}</label>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={hue}
-              onChange={(e) => setHue(Number(e.target.value))}
-            />
-          </div>
-        </details>
-
-        <details>
-          <summary>Motion</summary>
-          <div className="row">
-            <label>Speed: {speed.toFixed(2)}</label>
-            <input
-              type="range"
-              min={0}
-              max={3}
-              step={0.01}
-              value={speed}
-              onChange={(e) => setSpeed(Number(e.target.value))}
-            />
-          </div>
-        </details>
-
-        <details>
-          <summary>FX</summary>
-          <div className="row">
-            <label>Intensity: {intensity.toFixed(2)}</label>
-            <input
-              type="range"
-              min={0}
-              max={2}
-              step={0.01}
-              value={intensity}
-              onChange={(e) => setIntensity(Number(e.target.value))}
-            />
-          </div>
-        </details>
-      </div>
-
-      <div className="controls-bar">
-        <div className="controls-bar__content">
-          <span>Controls</span>
-          <button className="reset-btn" onClick={resetAll}>Reset</button>
+    <div
+      className="controls-panel"
+      style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        width: "100%",
+        background: "rgba(0, 0, 0, 0.8)",
+        color: "#fff",
+        padding: "16px",
+        zIndex: 1000,
+      }}
+    >
+      <details>
+        <summary>Colors</summary>
+        <div className="row">
+          <label>Hue: {hue.toFixed(2)}</label>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={hue}
+            onChange={(e) => setHue(Number(e.target.value))}
+          />
         </div>
-      </div>
-    </>
+      </details>
+
+      <details>
+        <summary>Motion</summary>
+        <div className="row">
+          <label>Speed: {speed.toFixed(2)}</label>
+          <input
+            type="range"
+            min={0}
+            max={3}
+            step={0.01}
+            value={speed}
+            onChange={(e) => setSpeed(Number(e.target.value))}
+          />
+        </div>
+      </details>
+
+      <details>
+        <summary>FX</summary>
+        <div className="row">
+          <label>Intensity: {intensity.toFixed(2)}</label>
+          <input
+            type="range"
+            min={0}
+            max={2}
+            step={0.01}
+            value={intensity}
+            onChange={(e) => setIntensity(Number(e.target.value))}
+          />
+        </div>
+      </details>
+
+      <div style={{ color: "red" }}>RESET TEST BUTTON</div>
+      <button className="reset-btn" onClick={resetAll}>Reset</button>
+    </div>
   );
 }
