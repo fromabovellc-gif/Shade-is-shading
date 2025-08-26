@@ -12,7 +12,7 @@ type Props = {
 
 export default function Controls({ hue, speed, intensity, onHue, onSpeed, onIntensity, onReset }: Props) {
   return (
-    <div className="controls-bar">
+    <>
       <div className="controls-row">
         <label>
           Hue
@@ -48,7 +48,7 @@ export default function Controls({ hue, speed, intensity, onHue, onSpeed, onInte
           />
         </label>
       </div>
-      <button className="reset" onClick={onReset}>Reset</button>
-    </div>
+      <button id="reset-btn" className="reset" onClick={onReset}>Reset</button>
+    </>
   );
 }
