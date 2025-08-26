@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { resetControls } from "../lib/resetControls";
 
 const read = (k: string, d: number) => {
   const v = localStorage.getItem(k);
@@ -20,13 +19,6 @@ function Controls() {
   useEffect(() => write("hue", hue), [hue]);
   useEffect(() => write("speed", speed), [speed]);
   useEffect(() => write("intensity", intensity), [intensity]);
-
-  const resetAll = () => {
-    setHue(0.6);
-    setSpeed(1.0);
-    setIntensity(1.0);
-    resetControls();
-  };
 
   return (
     <div className="controls-panel">
@@ -74,8 +66,6 @@ function Controls() {
           />
         </div>
       </details>
-
-      <button className="reset-btn" onClick={resetAll}>Reset</button>
     </div>
   );
 }

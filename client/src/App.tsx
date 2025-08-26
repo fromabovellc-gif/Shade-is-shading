@@ -1,15 +1,12 @@
 import React, { useEffect } from "react";
 import Controls from "./components/Controls";
 import DebugOverlay from "./components/DebugOverlay";
+import ResetButton from "./components/ResetButton";
 import "./index.css";
 
 export default function App() {
   useEffect(() => {
-    console.log(`[App] mounted @ ${new Date().toISOString()}`);
-    const canvas = document.getElementById("shader-canvas");
-    if (canvas) {
-      console.log("[Canvas] ready");
-    }
+    console.log("[App] ACTIVE", new Date().toISOString());
   }, []);
 
   return (
@@ -23,7 +20,7 @@ export default function App() {
           position: "fixed",
           left: 0,
           right: 0,
-          bottom: 56,
+          bottom: "56px",
           padding: "12px 16px",
           zIndex: 100000,
           pointerEvents: "auto",
@@ -32,6 +29,21 @@ export default function App() {
         }}
       >
         <Controls />
+      </div>
+      <ResetButton />
+      <div
+        style={{
+          position: "fixed",
+          right: 8,
+          bottom: 8,
+          zIndex: 999999,
+          background: "#0bf",
+          color: "#000",
+          padding: "6px 8px",
+          fontSize: 12,
+        }}
+      >
+        ACTIVE CLIENT
       </div>
       <DebugOverlay />
     </div>
