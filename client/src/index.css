@@ -1,3 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+.page{display:grid;grid-template-rows:1fr auto;min-height:100vh;background:#000;color:#fff}
+.stage{height:60vh;margin:16px;border-radius:16px;animation:pan linear infinite;background:#222}
+.controls{padding:16px;background:rgba(0,0,0,.6);backdrop-filter:saturate(140%) blur(6px)}
+.row{display:grid;grid-template-columns:140px 1fr;gap:12px;align-items:center;margin:10px 0}
+.row input[type="range"]{width:100%}
+.actions{display:flex;gap:8px;margin-top:12px}
+.actions button{background:#0b0b0c;color:#fff;border:1px solid #2a2a2e;border-radius:8px;padding:8px 12px;cursor:pointer}
+.actions button:hover{border-color:#3b3b40}
+details summary{cursor:pointer;user-select:none;margin:6px 0}
+@keyframes pan{0%{background-position:0% 50%}100%{background-position:100% 50%}}
