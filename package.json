@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "concurrently -k \"npm:server\" \"npm:client\"",
     "server": "tsx server/index.ts",
-    "client": "vite --host 0.0.0.0 --port 5173 --config client/vite.config.ts",
-    "build": "vite build --config client/vite.config.ts",
-    "preview": "vite preview --host 0.0.0.0 --port 5173 --config client/vite.config.ts",
+    "client": "cd client && vite --host 0.0.0.0 --port 5173",
+    "build": "cd client && vite build",
+    "preview": "cd client && vite preview --host 0.0.0.0 --port 5173",
     "clean": "rimraf node_modules client/.vite client/dist dist"
   },
   "dependencies": {
