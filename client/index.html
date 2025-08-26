@@ -7,6 +7,12 @@
     <title>ShaderVibe</title>
   </head>
   <body>
+    <div id="entry-debug" style="position:fixed;top:0;left:0;width:100%;background:#111;color:#0f0;font-size:14px;z-index:9999;padding:4px;text-align:center;">
+      ENTRY DEBUG: This is the active index.html
+    </div>
+    <script>
+      console.log("ENTRY DEBUG: index.html loaded from", window.location.pathname);
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
 
