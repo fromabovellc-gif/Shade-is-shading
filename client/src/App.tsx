@@ -3,64 +3,56 @@ import Controls from './components/Controls';
 import './index.css';
 
 export default function App() {
-  console.log('[App ACTIVE]', new Date().toISOString());
-
-  const [hue, setHue] = React.useState(0.5);
+  const [hue, setHue] = React.useState(0.6);
   const [speed, setSpeed] = React.useState(1.0);
   const [intensity, setIntensity] = React.useState(1.0);
 
   React.useEffect(() => {
-    const H = parseFloat(localStorage.getItem('hue') ?? '');
-    if (!Number.isNaN(H)) setHue(H);
-    const S = parseFloat(localStorage.getItem('speed') ?? '');
-    if (!Number.isNaN(S)) setSpeed(S);
-    const I = parseFloat(localStorage.getItem('intensity') ?? '');
-    if (!Number.isNaN(I)) setIntensity(I);
+    const h = parseFloat(localStorage.getItem('shader:hue') ?? '');
+    if (!Number.isNaN(h)) setHue(h);
+    const s = parseFloat(localStorage.getItem('shader:speed') ?? '');
+    if (!Number.isNaN(s)) setSpeed(s);
+    const i = parseFloat(localStorage.getItem('shader:intensity') ?? '');
+    if (!Number.isNaN(i)) setIntensity(i);
   }, []);
-  React.useEffect(() => { localStorage.setItem('hue', String(hue)); }, [hue]);
-  React.useEffect(() => { localStorage.setItem('speed', String(speed)); }, [speed]);
-  React.useEffect(() => { localStorage.setItem('intensity', String(intensity)); }, [intensity]);
+
+  React.useEffect(() => {
+    localStorage.setItem('shader:hue', String(hue));
+  }, [hue]);
+  React.useEffect(() => {
+    localStorage.setItem('shader:speed', String(speed));
+  }, [speed]);
+  React.useEffect(() => {
+    localStorage.setItem('shader:intensity', String(intensity));
+  }, [intensity]);
+
+  React.useEffect(() => {
+    const canvas = document.getElementById('shader-canvas') as HTMLCanvasElement | null;
+    if (canvas) {
+      canvas.style.backgroundColor = `hsl(${hue * 360},100%,${intensity * 50}%)`;
+    }
+  }, [hue, intensity]);
 
   const onReset = () => {
-    localStorage.removeItem('hue');
-    localStorage.removeItem('speed');
-    localStorage.removeItem('intensity');
-    window.location.reload();
+    localStorage.removeItem('shader:hue');
+    localStorage.removeItem('shader:speed');
+    localStorage.removeItem('shader:intensity');
+    setHue(0.6);
+    setSpeed(1.0);
+    setIntensity(1.0);
   };
 
   return (
     <div className="app">
       <div className="canvas-wrap">
-        <canvas
-          id="shader-canvas"
-          className="shader-canvas"
-          style={{ position: 'relative', zIndex: 1 }}
-        ></canvas>
+        <canvas id="shader-canvas" className="shader-canvas"></canvas>
       </div>
-
       <Controls
-        valueHue={hue} onHue={setHue}
-        valueSpeed={speed} onSpeed={setSpeed}
-        valueIntensity={intensity} onIntensity={setIntensity}
+        hue={hue} onHue={setHue}
+        speed={speed} onSpeed={setSpeed}
+        intensity={intensity} onIntensity={setIntensity}
         onReset={onReset}
       />
-
-      <div
-        style={{
-          position: 'fixed',
-          right: 8,
-          bottom: 8,
-          zIndex: 2147483647,
-          background: '#0ff',
-          color: '#000',
-          padding: '6px 8px',
-          fontSize: 12,
-          borderRadius: 6,
-          boxShadow: '0 0 6px rgba(0,0,0,.4)'
-        }}
-      >
-        ACTIVE CLIENT
-      </div>
     </div>
   );
 }
