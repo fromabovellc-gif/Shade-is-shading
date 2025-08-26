@@ -1,72 +1,79 @@
-import React from "react"
-import type { AppState } from "../types"
+import React, { useEffect, useMemo, useState } from "react";
 
-type Props = {
-  state: AppState
-  onChange: (next: Partial<AppState>) => void
-  onReset: () => void
-}
+const keyHue = "sv_hue";
+const keySpeed = "sv_speed";
+const keyIntensity = "sv_intensity";
 
-export default function Controls({ state, onChange, onReset }: Props) {
+export default function Controls() {
+  const [hue, setHue] = useState<number>(() => parseFloat(localStorage.getItem(keyHue) || "0.5"));
+  const [speed, setSpeed] = useState<number>(() => parseFloat(localStorage.getItem(keySpeed) || "1.0"));
+  const [intensity, setIntensity] = useState<number>(() => parseFloat(localStorage.getItem(keyIntensity) || "1.0"));
+
+  useEffect(() => localStorage.setItem(keyHue, String(hue)), [hue]);
+  useEffect(() => localStorage.setItem(keySpeed, String(speed)), [speed]);
+  useEffect(() => localStorage.setItem(keyIntensity, String(intensity)), [intensity]);
+
+  useEffect(() => {
+    const c = document.getElementById("shader-canvas") as HTMLCanvasElement | null;
+    if (!c) return;
+    const gl = c.getContext("webgl");
+    if (!gl) return;
+    // Simple animated color fill based on hue/speed/intensity
+    let raf = 0;
+    function draw(t: number) {
+      const phase = (t * 0.001 * speed) % 1;
+      const h = (hue + phase) % 1;
+      const r = Math.abs(Math.sin(h * Math.PI * 2)) * intensity;
+      const g = Math.abs(Math.sin((h + 0.33) * Math.PI * 2)) * intensity;
+      const b = Math.abs(Math.sin((h + 0.66) * Math.PI * 2)) * intensity;
+      gl.clearColor(r, g, b, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      raf = requestAnimationFrame(draw);
+    }
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, [hue, speed, intensity]);
+
+  const label = useMemo(() => (v: number) => v.toFixed(2), []);
+
   return (
-    <div className="controls">
-      <details open>
-        <summary>Colors</summary>
-        <label className="row">
-          <span>Hue: {state.hue.toFixed(2)}</span>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={state.hue}
-            onChange={(e) => onChange({ hue: Number(e.target.value) })}
-          />
-        </label>
-      </details>
-
-      <details open>
-        <summary>Motion</summary>
-        <label className="row">
-          <span>Speed: {state.speed.toFixed(2)}</span>
-          <input
-            type="range"
-            min={0}
-            max={3}
-            step={0.01}
-            value={state.speed}
-            onChange={(e) => onChange({ speed: Number(e.target.value) })}
-          />
-        </label>
-      </details>
-
-      <details open>
-        <summary>FX</summary>
-        <label className="row">
-          <span>Intensity: {state.intensity.toFixed(2)}</span>
-          <input
-            type="range"
-            min={0}
-            max={2}
-            step={0.01}
-            value={state.intensity}
-            onChange={(e) => onChange({ intensity: Number(e.target.value) })}
-          />
-        </label>
-      </details>
-
-      <div className="actions">
-        <button
-          onClick={onReset}
-          style={{ marginTop: "20px", padding: "8px 16px", fontSize: "16px" }}
-        >
-          Reset
-        </button>
-        <button onClick={() => navigator.clipboard.writeText(location.href)}>
-          Copy Link
-        </button>
+    <div className="mt-6 space-y-4">
+      <div>
+        <div className="text-sm text-gray-300 mb-1">Hue: {label(hue)}</div>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.01}
+          value={hue}
+          onChange={(e) => setHue(parseFloat(e.target.value))}
+          className="w-full"
+        />
+      </div>
+      <div>
+        <div className="text-sm text-gray-300 mb-1">Speed: {label(speed)}</div>
+        <input
+          type="range"
+          min={0}
+          max={2}
+          step={0.01}
+          value={speed}
+          onChange={(e) => setSpeed(parseFloat(e.target.value))}
+          className="w-full"
+        />
+      </div>
+      <div>
+        <div className="text-sm text-gray-300 mb-1">Intensity: {label(intensity)}</div>
+        <input
+          type="range"
+          min={0}
+          max={2}
+          step={0.01}
+          value={intensity}
+          onChange={(e) => setIntensity(parseFloat(e.target.value))}
+          className="w-full"
+        />
       </div>
     </div>
-  )
+  );
 }
-
