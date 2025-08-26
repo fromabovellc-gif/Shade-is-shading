@@ -5,6 +5,7 @@ const keySpeed = "sv_speed";
 const keyIntensity = "sv_intensity";
 
 export default function Controls() {
+  console.log("[Controls] mounted");
   const [hue, setHue] = useState<number>(() => parseFloat(localStorage.getItem(keyHue) || "0.5"));
   const [speed, setSpeed] = useState<number>(() => parseFloat(localStorage.getItem(keySpeed) || "1.0"));
   const [intensity, setIntensity] = useState<number>(() => parseFloat(localStorage.getItem(keyIntensity) || "1.0"));
@@ -18,7 +19,6 @@ export default function Controls() {
     if (!c) return;
     const gl = c.getContext("webgl");
     if (!gl) return;
-    // Simple animated color fill based on hue/speed/intensity
     let raf = 0;
     function draw(t: number) {
       const phase = (t * 0.001 * speed) % 1;
@@ -34,12 +34,25 @@ export default function Controls() {
     return () => cancelAnimationFrame(raf);
   }, [hue, speed, intensity]);
 
-  const label = useMemo(() => (v: number) => v.toFixed(2), []);
+  const fmt = useMemo(() => (v: number) => v.toFixed(2), []);
 
   return (
-    <div className="mt-6 space-y-4">
-      <div>
-        <div className="text-sm text-gray-300 mb-1">Hue: {label(hue)}</div>
+    <div
+      id="controls-panel"
+      style={{
+        position: "fixed",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 2147483646,
+        background: "rgba(0,0,0,0.85)",
+        backdropFilter: "blur(6px)",
+        borderTop: "1px solid rgba(255,255,255,0.15)",
+        padding: "12px 16px"
+      }}
+    >
+      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+        <div style={{ fontSize: 14, color: "#aab", marginBottom: 6 }}>Hue: {fmt(hue)}</div>
         <input
           type="range"
           min={0}
@@ -47,11 +60,12 @@ export default function Controls() {
           step={0.01}
           value={hue}
           onChange={(e) => setHue(parseFloat(e.target.value))}
-          className="w-full"
+          style={{ width: "100%" }}
         />
-      </div>
-      <div>
-        <div className="text-sm text-gray-300 mb-1">Speed: {label(speed)}</div>
+
+        <div style={{ height: 10 }} />
+
+        <div style={{ fontSize: 14, color: "#aab", marginBottom: 6 }}>Speed: {fmt(speed)}</div>
         <input
           type="range"
           min={0}
@@ -59,11 +73,12 @@ export default function Controls() {
           step={0.01}
           value={speed}
           onChange={(e) => setSpeed(parseFloat(e.target.value))}
-          className="w-full"
+          style={{ width: "100%" }}
         />
-      </div>
-      <div>
-        <div className="text-sm text-gray-300 mb-1">Intensity: {label(intensity)}</div>
+
+        <div style={{ height: 10 }} />
+
+        <div style={{ fontSize: 14, color: "#aab", marginBottom: 6 }}>Intensity: {fmt(intensity)}</div>
         <input
           type="range"
           min={0}
@@ -71,9 +86,10 @@ export default function Controls() {
           step={0.01}
           value={intensity}
           onChange={(e) => setIntensity(parseFloat(e.target.value))}
-          className="w-full"
+          style={{ width: "100%" }}
         />
       </div>
     </div>
   );
 }
+
