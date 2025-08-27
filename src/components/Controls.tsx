@@ -108,11 +108,13 @@ export default function Controls() {
         </details>
       </div>
 
-      <div className="controls-actions">
-        <button type="button" className="reset-btn" onClick={reset}>
-          Reset
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={reset}
+        style={{marginTop:12,padding:"8px 12px",border:"1px solid #999",background:"#eee",cursor:"pointer"}}
+      >
+        Reset
+      </button>
     </div>
   );
 }
