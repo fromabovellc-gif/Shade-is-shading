@@ -198,6 +198,9 @@ html, body, #root, .page { background: transparent; }
   animation: titleFloat 6s ease-in-out infinite;
 }
 
+/* Lab page wrapper */
+.lab-page { padding:16px; }
+
 @keyframes titleFloat {
   0%   { transform: translateY(0)   scale(1);   opacity: 0.96; }
   50%  { transform: translateY(-6px) scale(1.01); opacity: 0.98; }

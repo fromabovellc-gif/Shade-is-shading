@@ -1,9 +1,10 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import './index.css';
 import Controls from './components/Controls';
 import AmbientBackground from './components/AmbientBackground';
+import LabTool from './pages/LabTool';
 
-export default function App() {
+export function HomeApp() {
   const controlsRef = useRef({ hue: 0.6, speed: 1.0, intensity: 0.8 });
 
   return (
@@ -26,5 +27,24 @@ export default function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  const [hash, setHash] = useState(window.location.hash);
+  useEffect(() => {
+    const onHash = () => setHash(window.location.hash);
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  const isLab = hash.includes('/lab');
+
+  return (
+    <>
+      <header className="site-header">
+        <nav><a href="#/">Home</a> | <a href="#/lab">Lab Tool</a></nav>
+      </header>
+      {isLab ? <LabTool /> : <HomeApp />}
+    </>
   );
 }
