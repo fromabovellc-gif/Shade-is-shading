@@ -11,7 +11,7 @@ interface ControlsProps {
 }
 
 export default function Controls(props: ControlsProps) {
-  console.log('[Controls] mounted');
+  console.log('[Controls] (ACTIVE) rendering reset below sliders');
 
   const { hue, speed, intensity, setHue, setSpeed, setIntensity } = props;
 
@@ -81,9 +81,14 @@ export default function Controls(props: ControlsProps) {
               return;
             }
             try {
+              if (typeof setHue === 'function') setHue(0.6);
+              if (typeof setSpeed === 'function') setSpeed(1.0);
+              if (typeof setIntensity === 'function') setIntensity(1.0);
+
               localStorage.removeItem('sv_hue');
               localStorage.removeItem('sv_speed');
               localStorage.removeItem('sv_intensity');
+
               window.dispatchEvent(new CustomEvent('shadervibe:reset'));
             } catch {}
           }}
