@@ -160,3 +160,51 @@ input[type="range"]{width:100%;touch-action:none}
 .page, .layout{ max-width: 1200px; margin: 0 auto; }
 
 /* Keep existing tab/controls styles from previous step */
+
+/* Remove any solid/gradient banner behind the title */
+.hero, .header-banner { background: none !important; box-shadow: none !important; }
+
+/* Make page background transparent so ambient shows through */
+html, body, #root, .page { background: transparent; }
+
+/* Ambient canvas sits behind all content */
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;           /* behind everything */
+  pointer-events: none;
+  filter: saturate(105%) contrast(105%);
+}
+
+/* Floating title styling (subtle, classy) */
+.floating-title-wrap {
+  position: absolute;
+  top: 8px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;   /* interactions pass through */
+  z-index: 4;
+}
+
+.floating-title {
+  font-size: clamp(22px, 5.2vw, 44px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: rgba(255,255,255,0.92);
+  text-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  mix-blend-mode: screen;               /* meld with the shader glow */
+  animation: titleFloat 6s ease-in-out infinite;
+}
+
+@keyframes titleFloat {
+  0%   { transform: translateY(0)   scale(1);   opacity: 0.96; }
+  50%  { transform: translateY(-6px) scale(1.01); opacity: 0.98; }
+  100% { transform: translateY(0)   scale(1);   opacity: 0.96; }
+}
+
+/* Ensure preview area isn’t forcing black */
+.preview-sticky { background: transparent; }
+
+/* Keep existing controls styling; no changes needed there */
