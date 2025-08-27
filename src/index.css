@@ -124,3 +124,39 @@ input[type="range"]{width:100%;touch-action:none}
 /* Buttons reuse */
 .tab-btn:hover{filter:brightness(0.98)}
 
+
+/* Ambient background canvas behind the app */
+.ambient-bg{
+  position: fixed;
+  inset: 0;
+  z-index: 0;              /* behind content */
+  pointer-events: none;
+  opacity: 1;              /* alpha controlled in shader */
+}
+
+/* Put the rest of the app above */
+#root, .page, .layout, .site-header, .controls-card, .stage, .preview-sticky {
+  position: relative;
+  z-index: 1;
+}
+
+/* Stylized header (no big banner block) */
+.site-header{
+  padding: 16px 16px 8px;
+}
+.logo{
+  font-size: clamp(22px, 5vw, 36px);
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  margin: 0 0 8px 0;
+  background: linear-gradient(90deg,#aab4ff,#ffd1ff,#9bd1ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 2px 18px rgba(160,190,255,0.25);
+}
+
+/* Optional: tighten content max width if you have a container class */
+.page, .layout{ max-width: 1200px; margin: 0 auto; }
+
+/* Keep existing tab/controls styles from previous step */
