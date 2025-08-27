@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import './index.css';
 import Controls from './components/Controls';
 import AmbientBackground from './components/AmbientBackground';
-import LabTool from './pages/LabTool';
+import LabTool from './lab/LabTool';
 
 export function HomeApp() {
   const controlsRef = useRef({ hue: 0.6, speed: 1.0, intensity: 0.8 });
