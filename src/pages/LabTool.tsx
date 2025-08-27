@@ -1,61 +1,85 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import AmbientBackground from '../components/AmbientBackground';
+import { createLabEngine, Uniforms } from '../webgl/labEngine';
 import '../index.css';
 
-type TabKey = 'emblem'|'companion'|'trail'|'background';
+type TabKey = 'emblem' | 'companion' | 'trail' | 'background';
 const TABS: { key: TabKey; label: string }[] = [
-  { key: 'emblem',    label: 'Emblem' },
+  { key: 'emblem', label: 'Emblem' },
   { key: 'companion', label: 'Companion' },
-  { key: 'trail',     label: 'Trail' },
-  { key: 'background',label: 'Background' },
+  { key: 'trail', label: 'Trail' },
+  { key: 'background', label: 'Background' }
 ];
 
-const DEFAULT = 0.5;
+const themeMap = {
+  planet: { themeA: [0.20, 0.60, 1.00] as [number, number, number], themeB: [0.02, 0.10, 0.25] as [number, number, number] },
+  neon: { themeA: [0.95, 0.10, 0.95] as [number, number, number], themeB: [0.05, 0.90, 0.95] as [number, number, number] },
+  mono: { themeA: [0.85, 0.85, 0.90] as [number, number, number], themeB: [0.15, 0.15, 0.18] as [number, number, number] }
+};
 
-export default function LabTool(){
-  const controlsRef = React.useRef({ emblem:DEFAULT, companion:DEFAULT, trail:DEFAULT, background:DEFAULT });
-  const [active,setActive] = React.useState<TabKey>('emblem');
+type ThemeKey = keyof typeof themeMap;
 
-  const [emblem,setEmblem] = React.useState<number>(()=>Number(localStorage.getItem('lab:emblem') ?? DEFAULT));
-  const [companion,setCompanion] = React.useState<number>(()=>Number(localStorage.getItem('lab:companion') ?? DEFAULT));
-  const [trail,setTrail] = React.useState<number>(()=>Number(localStorage.getItem('lab:trail') ?? DEFAULT));
-  const [background,setBackground] = React.useState<number>(()=>Number(localStorage.getItem('lab:background') ?? DEFAULT));
-  const [master,setMaster] = React.useState<number>(()=>Number(localStorage.getItem('lab:master') ?? DEFAULT));
+const clamp = (v: number, min = 0, max = 1) => Math.min(Math.max(v, min), max);
+const calcDerived = (val: number, master: number, min: number, max: number) => {
+  const m = min + (max - min) * master;
+  return clamp(val * m);
+};
 
-  // sync master when tab changes or value changes
-  React.useEffect(()=>{
-    const val = active==='emblem'?emblem:active==='companion'?companion:active==='trail'?trail:background;
-    setMaster(val);
-  },[active, emblem, companion, trail, background]);
+export default function LabTool() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [master, setMaster] = useState<number>(() => Number(localStorage.getItem('lab:master') ?? 0.5));
+  const [emblem, setEmblem] = useState<number>(() => Number(localStorage.getItem('lab:emblem') ?? 0.5));
+  const [companion, setCompanion] = useState<number>(() => Number(localStorage.getItem('lab:companion') ?? 0.5));
+  const [trail, setTrail] = useState<number>(() => Number(localStorage.getItem('lab:trail') ?? 0.5));
+  const [background, setBackground] = useState<number>(() => Number(localStorage.getItem('lab:background') ?? 0.5));
+  const [theme, setTheme] = useState<ThemeKey>(() => (localStorage.getItem('lab:theme') as ThemeKey) ?? 'planet');
+  const [active, setActive] = useState<TabKey>('emblem');
 
-  // persistence
-  React.useEffect(()=>{const t=setTimeout(()=>localStorage.setItem('lab:emblem',String(emblem)),150);return()=>clearTimeout(t);},[emblem]);
-  React.useEffect(()=>{const t=setTimeout(()=>localStorage.setItem('lab:companion',String(companion)),150);return()=>clearTimeout(t);},[companion]);
-  React.useEffect(()=>{const t=setTimeout(()=>localStorage.setItem('lab:trail',String(trail)),150);return()=>clearTimeout(t);},[trail]);
-  React.useEffect(()=>{const t=setTimeout(()=>localStorage.setItem('lab:background',String(background)),150);return()=>clearTimeout(t);},[background]);
-  React.useEffect(()=>{const t=setTimeout(()=>localStorage.setItem('lab:master',String(master)),150);return()=>clearTimeout(t);},[master]);
+  const uniformsRef = useRef<Uniforms>({
+    master,
+    emblem: calcDerived(emblem, master, 0.6, 1.4),
+    companion: calcDerived(companion, master, 0.4, 1.6),
+    trail: calcDerived(trail, master, 0.2, 1.8),
+    background: calcDerived(background, master, 0.7, 1.3),
+    ...themeMap[theme]
+  });
 
-  // sync to ref
-  React.useEffect(()=>{controlsRef.current={emblem,companion,trail,background};},[emblem,companion,trail,background]);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const eng = createLabEngine(canvas, uniformsRef);
+    return () => eng.dispose();
+  }, []);
 
-  const num = (e: React.ChangeEvent<HTMLInputElement>) => (e.currentTarget as HTMLInputElement).valueAsNumber;
+  useEffect(() => {
+    const { themeA, themeB } = themeMap[theme];
+    uniformsRef.current = {
+      master,
+      emblem: calcDerived(emblem, master, 0.6, 1.4),
+      companion: calcDerived(companion, master, 0.4, 1.6),
+      trail: calcDerived(trail, master, 0.2, 1.8),
+      background: calcDerived(background, master, 0.7, 1.3),
+      themeA,
+      themeB
+    };
+  }, [master, emblem, companion, trail, background, theme]);
 
-  const updateValue = (key:TabKey,val:number)=>{
-    if(key==='emblem') setEmblem(val);
-    else if(key==='companion') setCompanion(val);
-    else if(key==='trail') setTrail(val);
-    else setBackground(val);
-    if(active===key) setMaster(val);
+  const persist = (key: string, val: string) => {
+    const t = setTimeout(() => localStorage.setItem(key, val), 150);
+    return () => clearTimeout(t);
   };
+  useEffect(() => persist('lab:master', master.toString()), [master]);
+  useEffect(() => persist('lab:emblem', emblem.toString()), [emblem]);
+  useEffect(() => persist('lab:companion', companion.toString()), [companion]);
+  useEffect(() => persist('lab:trail', trail.toString()), [trail]);
+  useEffect(() => persist('lab:background', background.toString()), [background]);
+  useEffect(() => persist('lab:theme', theme), [theme]);
 
-  const onMaster = (val:number)=>{
-    setMaster(val);
-    updateValue(active,val);
-  };
+  const num = (e: React.ChangeEvent<HTMLInputElement>) => e.currentTarget.valueAsNumber;
 
-  const resetAll = ()=>{
-    ['lab:emblem','lab:companion','lab:trail','lab:background','lab:master'].forEach(k=>localStorage.removeItem(k));
-    setEmblem(DEFAULT); setCompanion(DEFAULT); setTrail(DEFAULT); setBackground(DEFAULT); setMaster(DEFAULT);
+  const reset = () => {
+    ['lab:master', 'lab:emblem', 'lab:companion', 'lab:trail', 'lab:background', 'lab:theme'].forEach(k => localStorage.removeItem(k));
+    setMaster(0.5); setEmblem(0.5); setCompanion(0.5); setTrail(0.5); setBackground(0.5); setTheme('planet');
   };
 
   return (
@@ -65,59 +89,66 @@ export default function LabTool(){
         <div className="left">
           <div id="previewSticky" className="preview-sticky">
             <div className="floating-title-wrap"><h1 className="floating-title">Lab Tool</h1></div>
-            <section className="stage"><canvas id="gl-canvas" style={{width:'100%',height:'100%'}} /></section>
+            <section className="stage"><canvas ref={canvasRef} style={{ width: '100%', height: '100%', borderRadius: 'inherit' }} /></section>
           </div>
         </div>
         <div className="right">
           <div className="group">
             <div className="row">
               <div className="label">Master: {master.toFixed(2)}</div>
-              <input type="range" min={0} max={1} step={0.01} value={master} onChange={e=>onMaster(num(e))} />
+              <input type="range" min={0} max={1} step={0.01} value={master} onChange={e => setMaster(num(e))} />
             </div>
           </div>
           <div className="tabs" role="tablist" aria-label="Lab sections">
-            {TABS.map(t=>(
-              <button key={t.key} role="tab" aria-selected={active===t.key} aria-controls={`pane-${t.key}`} className="tab-btn" onClick={()=>setActive(t.key)} type="button">{t.label}</button>
+            {TABS.map(t => (
+              <button key={t.key} role="tab" aria-selected={active === t.key} aria-controls={`pane-${t.key}`} className="tab-btn" onClick={() => setActive(t.key)} type="button">{t.label}</button>
             ))}
           </div>
           <div className="tab-content">
-            <div id="pane-emblem" className={`tab-pane ${active==='emblem'?'active':''}`} role="tabpanel">
+            <div id="pane-emblem" className={`tab-pane ${active === 'emblem' ? 'active' : ''}`} role="tabpanel">
               <div className="group">
                 <div className="row">
                   <div className="label">Emblem: {emblem.toFixed(2)}</div>
-                  <input type="range" min={0} max={1} step={0.01} value={emblem} onChange={e=>updateValue('emblem',num(e))} />
+                  <input type="range" min={0} max={1} step={0.01} value={emblem} onChange={e => setEmblem(num(e))} />
                 </div>
               </div>
             </div>
-            <div id="pane-companion" className={`tab-pane ${active==='companion'?'active':''}`} role="tabpanel">
+            <div id="pane-companion" className={`tab-pane ${active === 'companion' ? 'active' : ''}`} role="tabpanel">
               <div className="group">
                 <div className="row">
                   <div className="label">Companion: {companion.toFixed(2)}</div>
-                  <input type="range" min={0} max={1} step={0.01} value={companion} onChange={e=>updateValue('companion',num(e))} />
+                  <input type="range" min={0} max={1} step={0.01} value={companion} onChange={e => setCompanion(num(e))} />
                 </div>
               </div>
             </div>
-            <div id="pane-trail" className={`tab-pane ${active==='trail'?'active':''}`} role="tabpanel">
+            <div id="pane-trail" className={`tab-pane ${active === 'trail' ? 'active' : ''}`} role="tabpanel">
               <div className="group">
                 <div className="row">
                   <div className="label">Trail: {trail.toFixed(2)}</div>
-                  <input type="range" min={0} max={1} step={0.01} value={trail} onChange={e=>updateValue('trail',num(e))} />
+                  <input type="range" min={0} max={1} step={0.01} value={trail} onChange={e => setTrail(num(e))} />
                 </div>
               </div>
             </div>
-            <div id="pane-background" className={`tab-pane ${active==='background'?'active':''}`} role="tabpanel">
+            <div id="pane-background" className={`tab-pane ${active === 'background' ? 'active' : ''}`} role="tabpanel">
               <div className="group">
                 <div className="row">
                   <div className="label">Background: {background.toFixed(2)}</div>
-                  <input type="range" min={0} max={1} step={0.01} value={background} onChange={e=>updateValue('background',num(e))} />
+                  <input type="range" min={0} max={1} step={0.01} value={background} onChange={e => setBackground(num(e))} />
                 </div>
               </div>
             </div>
           </div>
-          <div className="row"><button className="tab-btn" onClick={resetAll}>Reset All</button></div>
+          <div className="row">
+            <div className="label">Themes</div>
+            <div className="tabs">
+              {(['planet', 'neon', 'mono'] as ThemeKey[]).map(k => (
+                <button key={k} className="tab-btn" aria-pressed={theme === k} onClick={() => setTheme(k)} type="button">{k.charAt(0).toUpperCase() + k.slice(1)}</button>
+              ))}
+            </div>
+          </div>
+          <div className="row"><button className="tab-btn" onClick={reset}>Reset All</button></div>
         </div>
       </div>
     </div>
   );
 }
-
