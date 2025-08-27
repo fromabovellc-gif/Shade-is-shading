@@ -30,6 +30,7 @@ export default function App() {
     localStorage.removeItem(STORAGE_KEYS.hue);
     localStorage.removeItem(STORAGE_KEYS.speed);
     localStorage.removeItem(STORAGE_KEYS.intensity);
+    window.dispatchEvent(new CustomEvent('shadervibe:reset'));
   };
 
   // Expose values to your shader/canvas if needed
