@@ -1,155 +1,110 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
-const STORAGE_KEYS = {
-  hue: 'shader:hue',
-  speed: 'shader:speed',
-  intensity: 'shader:intensity',
-} as const;
-
-const TABS = [
+type TabKey = 'templates'|'colors'|'motion'|'effects';
+const TABS: { key: TabKey; label: string }[] = [
   { key: 'templates', label: 'Templates' },
-  { key: 'colors', label: 'Colors' },
-  { key: 'motion', label: 'Motion' },
-  { key: 'effects', label: 'Effects' },
-] as const;
+  { key: 'colors',    label: 'Colors' },
+  { key: 'motion',    label: 'Motion' },
+  { key: 'effects',   label: 'Effects' },
+];
 
-type ControlsState = {
-  hue: number;
-  speed: number;
-  intensity: number;
-};
+export default function Controls(props: {
+  controlsRef?: React.MutableRefObject<{hue:number;speed:number;intensity:number}>;
+}) {
+  // Reuse existing init & debounce scheme:
+  const [hue, setHue] = React.useState<number>(() => Number(localStorage.getItem('shader:hue') ?? 0.60));
+  const [speed, setSpeed] = React.useState<number>(() => Number(localStorage.getItem('shader:speed') ?? 1.00));
+  const [intensity, setIntensity] = React.useState<number>(() => Number(localStorage.getItem('shader:intensity') ?? 0.80));
 
-interface ControlsProps {
-  controlsRef: React.MutableRefObject<ControlsState>;
-}
+  // Debounced persistence (preserve your existing helper if you already have one)
+  React.useEffect(() => { const t=setTimeout(()=>localStorage.setItem('shader:hue', String(hue)),150); return ()=>clearTimeout(t); }, [hue]);
+  React.useEffect(() => { const t=setTimeout(()=>localStorage.setItem('shader:speed', String(speed)),150); return ()=>clearTimeout(t); }, [speed]);
+  React.useEffect(() => { const t=setTimeout(()=>localStorage.setItem('shader:intensity', String(intensity)),150); return ()=>clearTimeout(t); }, [intensity]);
 
-export default function Controls({ controlsRef }: ControlsProps) {
-  const [active, setActive] = useState<string>('templates');
-  const [hue, setHue] = useState(0.6);
-  const [speed, setSpeed] = useState(1.0);
-  const [intensity, setIntensity] = useState(0.8);
-
-  useEffect(() => {
-    try {
-      const h = localStorage.getItem(STORAGE_KEYS.hue);
-      if (h !== null) {
-        const n = parseFloat(h);
-        if (!Number.isNaN(n)) setHue(n);
-      }
-      const s = localStorage.getItem(STORAGE_KEYS.speed);
-      if (s !== null) {
-        const n = parseFloat(s);
-        if (!Number.isNaN(n)) setSpeed(n);
-      }
-      const i = localStorage.getItem(STORAGE_KEYS.intensity);
-      if (i !== null) {
-        const n = parseFloat(i);
-        if (!Number.isNaN(n)) setIntensity(n);
-      }
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    controlsRef.current = { hue, speed, intensity };
-    const t = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEYS.hue, String(hue));
-        localStorage.setItem(STORAGE_KEYS.speed, String(speed));
-        localStorage.setItem(STORAGE_KEYS.intensity, String(intensity));
-      } catch {}
-    }, 150);
-    return () => clearTimeout(t);
-  }, [hue, speed, intensity, controlsRef]);
+  // Sync to ref for RAF loop (no GL re-init)
+  React.useEffect(() => {
+    if (props.controlsRef) props.controlsRef.current = {hue,speed,intensity};
+  }, [hue,speed,intensity,props.controlsRef]);
 
   const resetAll = () => {
-    setHue(0.6);
-    setSpeed(1.0);
-    setIntensity(0.8);
-    controlsRef.current = { hue: 0.6, speed: 1.0, intensity: 0.8 };
-    try {
-      localStorage.removeItem(STORAGE_KEYS.hue);
-      localStorage.removeItem(STORAGE_KEYS.speed);
-      localStorage.removeItem(STORAGE_KEYS.intensity);
-    } catch {}
+    localStorage.removeItem('shader:hue');
+    localStorage.removeItem('shader:speed');
+    localStorage.removeItem('shader:intensity');
+    setHue(0.60); setSpeed(1.00); setIntensity(0.80);
   };
 
+  const [active, setActive] = React.useState<TabKey>('templates');
+  const num = (e: React.ChangeEvent<HTMLInputElement>) => (e.currentTarget as HTMLInputElement).valueAsNumber;
+
   return (
-    <div className="controls-card">
-      <div className="tabs">
-        {TABS.map((t) => (
+    <>
+      {/* Header (subtitle removed per request) */}
+      <div className="tabs" role="tablist" aria-label="Shader sections">
+        {TABS.map(t=>(
           <button
             key={t.key}
-            className={`tab ${active === t.key ? 'is-active' : ''}`}
-            onClick={() => setActive(t.key)}
+            role="tab"
+            aria-selected={active===t.key}
+            aria-controls={`pane-${t.key}`}
+            className="tab-btn"
+            onClick={()=>setActive(t.key)}
+            type="button"
           >
             {t.label}
           </button>
         ))}
       </div>
 
-      {active === 'templates' && <div className="panel" />}
-
-      {active === 'colors' && (
-        <div className="panel">
-          <div className="row">
-            <label htmlFor="hue">Hue: {hue.toFixed(2)}</label>
-            <input
-              id="hue"
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={hue}
-              onChange={(e) =>
-                setHue((e.target as HTMLInputElement).valueAsNumber)
-              }
-            />
+      <div className="tab-content">
+        {/* Templates */}
+        <div id="pane-templates" className={`tab-pane ${active==='templates'?'active':''}`} role="tabpanel">
+          <div className="group">
+            <div className="row">
+              <div className="label">Templates</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                <button className="tab-btn" onClick={()=>{ setHue(0.58); setSpeed(1.2); setIntensity(1.2); }}>Waves</button>
+                <button className="tab-btn" onClick={()=>{ setHue(0.66); setSpeed(1.6); setIntensity(1.4); }}>Ripples</button>
+                <button className="tab-btn" onClick={()=>{ setHue(0.77); setSpeed(3.0); setIntensity(2.0); }}>Plasma</button>
+                <button className="tab-btn" onClick={()=>{ setHue(0.85); setSpeed(0.8); setIntensity(1.6); }}>Tunnel</button>
+              </div>
+            </div>
+            <div className="row"><button className="tab-btn" onClick={resetAll}>Reset All</button></div>
           </div>
         </div>
-      )}
 
-      {active === 'motion' && (
-        <div className="panel">
-          <div className="row">
-            <label htmlFor="speed">Speed: {speed.toFixed(2)}</label>
-            <input
-              id="speed"
-              type="range"
-              min={0}
-              max={5}
-              step={0.01}
-              value={speed}
-              onChange={(e) =>
-                setSpeed((e.target as HTMLInputElement).valueAsNumber)
-              }
-            />
+        {/* Colors */}
+        <div id="pane-colors" className={`tab-pane ${active==='colors'?'active':''}`} role="tabpanel">
+          <div className="group">
+            <div className="row">
+              <div className="label">Hue: {hue.toFixed(2)}</div>
+              <input type="range" min={0} max={1} step={0.01} value={hue}
+                     onChange={e=>setHue(num(e))}/>
+            </div>
           </div>
         </div>
-      )}
 
-      {active === 'effects' && (
-        <div className="panel">
-          <div className="row">
-            <label htmlFor="intensity">Intensity: {intensity.toFixed(2)}</label>
-            <input
-              id="intensity"
-              type="range"
-              min={0}
-              max={2}
-              step={0.01}
-              value={intensity}
-              onChange={(e) =>
-                setIntensity((e.target as HTMLInputElement).valueAsNumber)
-              }
-            />
+        {/* Motion */}
+        <div id="pane-motion" className={`tab-pane ${active==='motion'?'active':''}`} role="tabpanel">
+          <div className="group">
+            <div className="row">
+              <div className="label">Speed: {speed.toFixed(2)}×</div>
+              <input type="range" min={0.1} max={3} step={0.01} value={speed}
+                     onChange={e=>setSpeed(num(e))}/>
+            </div>
           </div>
         </div>
-      )}
 
-      <button type="button" className="reset" onClick={resetAll}>
-        Reset
-      </button>
-    </div>
+        {/* Effects */}
+        <div id="pane-effects" className={`tab-pane ${active==='effects'?'active':''}`} role="tabpanel">
+          <div className="group">
+            <div className="row">
+              <div className="label">Intensity: {intensity.toFixed(2)}</div>
+              <input type="range" min={0} max={2} step={0.01} value={intensity}
+                     onChange={e=>setIntensity(num(e))}/>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
-
