@@ -6,7 +6,25 @@ const STORAGE_KEYS = {
   intensity: 'shader:intensity',
 } as const;
 
-export default function Controls() {
+const TABS = [
+  { key: 'templates', label: 'Templates' },
+  { key: 'colors', label: 'Colors' },
+  { key: 'motion', label: 'Motion' },
+  { key: 'effects', label: 'Effects' },
+] as const;
+
+type ControlsState = {
+  hue: number;
+  speed: number;
+  intensity: number;
+};
+
+interface ControlsProps {
+  controlsRef: React.MutableRefObject<ControlsState>;
+}
+
+export default function Controls({ controlsRef }: ControlsProps) {
+  const [active, setActive] = useState<string>('templates');
   const [hue, setHue] = useState(0.6);
   const [speed, setSpeed] = useState(1.0);
   const [intensity, setIntensity] = useState(0.8);
@@ -32,19 +50,22 @@ export default function Controls() {
   }, []);
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEYS.hue, String(hue)); } catch {}
-  }, [hue]);
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEYS.speed, String(speed)); } catch {}
-  }, [speed]);
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEYS.intensity, String(intensity)); } catch {}
-  }, [intensity]);
+    controlsRef.current = { hue, speed, intensity };
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEYS.hue, String(hue));
+        localStorage.setItem(STORAGE_KEYS.speed, String(speed));
+        localStorage.setItem(STORAGE_KEYS.intensity, String(intensity));
+      } catch {}
+    }, 150);
+    return () => clearTimeout(t);
+  }, [hue, speed, intensity, controlsRef]);
 
-  const reset = () => {
+  const resetAll = () => {
     setHue(0.6);
     setSpeed(1.0);
     setIntensity(0.8);
+    controlsRef.current = { hue: 0.6, speed: 1.0, intensity: 0.8 };
     try {
       localStorage.removeItem(STORAGE_KEYS.hue);
       localStorage.removeItem(STORAGE_KEYS.speed);
@@ -53,11 +74,24 @@ export default function Controls() {
   };
 
   return (
-    <div id="controls-fixed">
-      <div className="controls-row">
-        <details open>
-          <summary>Colors</summary>
-          <div className="control">
+    <div className="controls-card">
+      <div className="tabs">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            className={`tab ${active === t.key ? 'is-active' : ''}`}
+            onClick={() => setActive(t.key)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {active === 'templates' && <div className="panel" />}
+
+      {active === 'colors' && (
+        <div className="panel">
+          <div className="row">
             <label htmlFor="hue">Hue: {hue.toFixed(2)}</label>
             <input
               id="hue"
@@ -66,16 +100,17 @@ export default function Controls() {
               max={1}
               step={0.01}
               value={hue}
-              onChange={(e) => setHue(parseFloat(e.target.value))}
+              onChange={(e) =>
+                setHue((e.target as HTMLInputElement).valueAsNumber)
+              }
             />
           </div>
-        </details>
-      </div>
+        </div>
+      )}
 
-      <div className="controls-row">
-        <details open>
-          <summary>Motion</summary>
-          <div className="control">
+      {active === 'motion' && (
+        <div className="panel">
+          <div className="row">
             <label htmlFor="speed">Speed: {speed.toFixed(2)}</label>
             <input
               id="speed"
@@ -84,16 +119,17 @@ export default function Controls() {
               max={5}
               step={0.01}
               value={speed}
-              onChange={(e) => setSpeed(parseFloat(e.target.value))}
+              onChange={(e) =>
+                setSpeed((e.target as HTMLInputElement).valueAsNumber)
+              }
             />
           </div>
-        </details>
-      </div>
+        </div>
+      )}
 
-      <div className="controls-row">
-        <details open>
-          <summary>FX</summary>
-          <div className="control">
+      {active === 'effects' && (
+        <div className="panel">
+          <div className="row">
             <label htmlFor="intensity">Intensity: {intensity.toFixed(2)}</label>
             <input
               id="intensity"
@@ -102,19 +138,18 @@ export default function Controls() {
               max={2}
               step={0.01}
               value={intensity}
-              onChange={(e) => setIntensity(parseFloat(e.target.value))}
+              onChange={(e) =>
+                setIntensity((e.target as HTMLInputElement).valueAsNumber)
+              }
             />
           </div>
-        </details>
-      </div>
+        </div>
+      )}
 
-      <button
-        type="button"
-        onClick={reset}
-        style={{marginTop:12,padding:"8px 12px",border:"1px solid #999",background:"#eee",cursor:"pointer"}}
-      >
+      <button type="button" className="reset" onClick={resetAll}>
         Reset
       </button>
     </div>
   );
 }
+
