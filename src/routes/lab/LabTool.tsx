@@ -1,7 +1,7 @@
 /*
   - Wrap page with .lab-page grid
-  - Keep canvas in .lab-preview with <canvas className="lab-canvas" />
-  - Dock controls at bottom: .lab-dock with .lab-panel (active controls) + .lab-tabs (tab buttons)
+  - Keep canvas in #labLiveView with <canvas className="lab-canvas" />
+  - Controls panel uses .dock with .dock-header/.dock-body and .dock-tabs
   - IMPORTANT: do not re-init GL on slider changes; uniforms from controlsRef drive shader.
 */
 import React, { useEffect, useRef, useState } from "react";
@@ -16,6 +16,7 @@ export default function LabTool() {
     companion: 0.5, trail: 0.5, bg: 0.3
   });
   const [tab, setTab] = useState<TabKey>("emblem");
+  const tabTitle = `${tab[0].toUpperCase() + tab.slice(1)} Controls`;
 
   // ---- GL init once -------------------------------------------------
   useEffect(() => {
@@ -71,69 +72,77 @@ export default function LabTool() {
     <div className="lab-page">
       <div className="lab-header">{/* (keep your Home/Lab buttons) */}</div>
 
-      <div className="lab-preview">
+      <div id="labLiveView" className="lab-preview">
         <canvas ref={canvasRef} className="lab-canvas" />
       </div>
 
-      <div className="lab-dock">
-        <div className="lab-panel" role="region" aria-label="Active Controls">
+      <div className="dock" role="region" aria-label="Lab Controls">
+        <div className="dock-header">
+          <div className="dock-title">{tabTitle}</div>
+        </div>
+        <div className="dock-body">
           {tab === "emblem" && (
             <>
-              <h3>Emblem Controls</h3>
-              <div className="lab-row">
-                <label>Hue</label>
-                <input className="lab-range" type="range" min={0} max={1} step={0.01} {...bind("hue")} />
+              <div className="dock-row">
+                <label className="dock-label">Hue</label>
+                <input type="range" min={0} max={1} step={0.01} {...bind("hue")} />
               </div>
-              <div className="lab-row">
-                <label>Gloss</label>
-                <input className="lab-range" type="range" min={0} max={1} step={0.01} {...bind("gloss")} />
+              <div className="dock-row">
+                <label className="dock-label">Gloss</label>
+                <input type="range" min={0} max={1} step={0.01} {...bind("gloss")} />
               </div>
-              <div className="lab-row">
-                <label>Roughness</label>
-                <input className="lab-range" type="range" min={0} max={1} step={0.01} {...bind("rough")} />
+              <div className="dock-row">
+                <label className="dock-label">Roughness</label>
+                <input type="range" min={0} max={1} step={0.01} {...bind("rough")} />
               </div>
-              <div className="lab-row">
-                <label>Rim Strength</label>
-                <input className="lab-range" type="range" min={0} max={1} step={0.01} {...bind("rim")} />
+              <div className="dock-row">
+                <label className="dock-label">Rim Strength</label>
+                <input type="range" min={0} max={1} step={0.01} {...bind("rim")} />
               </div>
             </>
           )}
 
           {tab === "companion" && (
-            <>
-              <h3>Companion</h3>
-              <input className="lab-range" type="range" min={0} max={1} step={0.01} {...bind("companion")} />
-            </>
+            <div className="dock-row">
+              <label className="dock-label">Companion</label>
+              <input type="range" min={0} max={1} step={0.01} {...bind("companion")} />
+            </div>
           )}
 
           {tab === "trail" && (
-            <>
-              <h3>Trail</h3>
-              <input className="lab-range" type="range" min={0} max={1} step={0.01} {...bind("trail")} />
-            </>
+            <div className="dock-row">
+              <label className="dock-label">Trail</label>
+              <input type="range" min={0} max={1} step={0.01} {...bind("trail")} />
+            </div>
           )}
 
           {tab === "background" && (
-            <>
-              <h3>Background</h3>
-              <input className="lab-range" type="range" min={0} max={1} step={0.01} {...bind("bg")} />
-            </>
+            <div className="dock-row">
+              <label className="dock-label">Background</label>
+              <input type="range" min={0} max={1} step={0.01} {...bind("bg")} />
+            </div>
           )}
 
           {tab === "skins" && (
-            <>
-              <h3>Skins</h3>
+            <div className="dock-row">
+              <label className="dock-label">Skins</label>
               {/* keep your export UI */}
-            </>
+            </div>
           )}
-        </div>
 
-        <div className="lab-tabs" role="tablist" aria-label="Lab tabs">
-          {(["emblem","companion","trail","background","skins"] as TabKey[]).map(k => (
-            <button key={k} className={`lab-tab ${tab===k?"is-active":""}`} onClick={()=>setTab(k)}>
-              {k[0].toUpperCase()+k.slice(1)}
-            </button>
-          ))}
+          <div className="dock-tabs" role="tablist" aria-label="Lab sections">
+            {(["emblem","companion","trail","background","skins"] as TabKey[]).map(k => (
+              <button
+                key={k}
+                className="dock-tab"
+                role="tab"
+                aria-selected={tab===k}
+                onClick={()=>setTab(k)}
+              >
+                {k[0].toUpperCase()+k.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
