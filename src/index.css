@@ -226,3 +226,23 @@ html, body, #root, .page { background: transparent; }
 .lab-options { margin-top:12px; }
 .lab-options-toggle { width:100%; text-align:left; background:#fff; border:1px solid #cfd4dc; border-radius:10px; padding:8px 12px; font-weight:600; cursor:pointer; }
 .lab-options-body { margin-top:12px; }
+/* Split */
+.lab-split{display:grid;grid-template-columns:1fr 0.6fr;gap:20px;align-items:start}
+.lab-left,.lab-right{position:sticky;top:12px}
+@media (max-width:979px){.lab-split{display:block}.lab-left,.lab-right{position:static}}
+
+/* Canvas card */
+.lab-canvas{border-radius:16px;overflow:hidden;box-shadow:0 12px 32px rgba(0,0,0,.25)}
+.lab-canvas canvas{width:100%;height:auto;display:block;border-radius:16px}
+
+/* Dock (mobile) */
+@media (max-width:979px){
+  body.lab-lock{overflow:hidden}
+  .dock{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:8px 12px;background:linear-gradient(180deg,rgba(10,10,20,.2),rgba(10,10,20,.7))}
+  .dock-tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .dock-btn{border:1px solid #3a4371;background:#111a3a;color:#cfe0ff;border-radius:12px;padding:8px 12px;font-weight:700}
+  .dock-btn.is-active{outline:3px solid rgba(96,150,255,.35)}
+  .dock-card{position:fixed;left:12px;right:12px;bottom:64px;background:#0f1330;border:1px solid #3a4371;border-radius:16px;padding:12px;box-shadow:0 12px 32px rgba(0,0,0,.4)}
+  .row{display:grid;gap:8px;margin:10px 0}
+  input[type="range"]{width:100%;touch-action:none}
+}
