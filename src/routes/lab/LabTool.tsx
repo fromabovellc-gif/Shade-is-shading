@@ -1,250 +1,328 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { LAB_PRESETS, type LabPresetKey, type LabState } from "../../lib/presets";
+import { useEffect, useRef, useState } from "react";
+import initLabRenderer, {
+  type LabUniforms,
+} from "../../lib/gl/labRenderer";
 
-export default function Lab() {
-  const glRef = useRef<{ setState: (s: LabState) => void } | null>(null);
-  const mountRef = useRef<HTMLDivElement | null>(null);
+type TabKey =
+  | "Emblem"
+  | "Companion"
+  | "Trail"
+  | "Background"
+  | "Skins";
 
-  const initial = useMemo<LabState>(() => LAB_PRESETS.planet, []);
-  const [presetKey, setPresetKey] = useState<LabPresetKey>("planet");
-  const [state, setState] = useState<LabState>(initial);
+function useUniform(
+  key: string,
+  uniformKey: keyof LabUniforms,
+  initial: number,
+  uniformsRef: React.MutableRefObject<LabUniforms>
+) {
+  const [value, setValue] = useState(() => {
+    const stored = localStorage.getItem(key);
+    const num = stored !== null ? parseFloat(stored) : initial;
+    uniformsRef.current[uniformKey] = num;
+    return num;
+  });
 
-  // Mount GL exactly once; expose setState to update uniforms only
-  useEffect(() => {
-    if (!mountRef.current || glRef.current) return;
-    const canvas = document.createElement("canvas");
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
-    mountRef.current.appendChild(canvas);
+  const timeout = useRef<number>();
 
-    const glHandle = (window as any).__initLabGL?.(canvas, {
-      vertexUrl: "/shaders/lab/emblem.vert",
-      fragmentUrl: "/shaders/lab/emblem.frag",
-    });
-
-    glRef.current = {
-      setState: (s: LabState) => {
-        glHandle?.setUniform?.("uHue", s.emblem.hue);
-        glHandle?.setUniform?.("uGloss", s.emblem.gloss);
-        glHandle?.setUniform?.("uRoughness", s.emblem.roughness);
-        glHandle?.setUniform?.("uRim", s.emblem.rim);
-        glHandle?.setUniform?.("uCompanion", s.companion.amount);
-        glHandle?.setUniform?.("uTrail", s.trail.amount);
-        glHandle?.setUniform?.("uBgVignette", s.background.vignette);
-        glHandle?.setUniform?.("uHueShift", s.background.hueShift ?? 0);
-        glHandle?.setUniform?.("uMaster", s.master);
-      },
-    };
-    glRef.current.setState(initial);
-
-    let raf = 0;
-    const loop = (t: number) => {
-      glHandle?.setUniform?.("uTime", t * 0.001);
-      glHandle?.render?.();
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-
-    const onResize = () => {
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      const rect = mountRef.current!.getBoundingClientRect();
-      const w = Math.round(rect.width * dpr);
-      const h = Math.round(rect.height * dpr);
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
-        glHandle?.resize?.(w, h, dpr);
-      }
-    };
-    onResize();
-    const ro = new ResizeObserver(onResize);
-    ro.observe(mountRef.current!);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-      glHandle?.dispose?.();
-      glRef.current = null;
-      mountRef.current?.removeChild(canvas);
-    };
-  }, [initial]);
-
-  // push changes to uniforms (no recompile)
-  useEffect(() => {
-    glRef.current?.setState(state);
-  }, [state]);
-
-  const applyPreset = (k: LabPresetKey) => {
-    setPresetKey(k);
-    setState(LAB_PRESETS[k]);
+  const set = (v: number) => {
+    setValue(v);
+    uniformsRef.current[uniformKey] = v;
+    window.clearTimeout(timeout.current);
+    timeout.current = window.setTimeout(() => {
+      localStorage.setItem(key, v.toString());
+    }, 150);
   };
 
-  const saveSkin = (name: string) => {
-    const key = "lab:skins";
-    const list = JSON.parse(localStorage.getItem(key) || "[]");
-    list.unshift({ name, presetKey, state, savedAt: Date.now() });
-    localStorage.setItem(key, JSON.stringify(list));
+  return [value, set] as const;
+}
+
+function LabeledRange({
+  label,
+  min,
+  max,
+  step,
+  value,
+  onChange,
+}: {
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="labeled">
+      <label>{label}</label>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(e.currentTarget.valueAsNumber)}
+      />
+    </div>
+  );
+}
+
+export default function LabTool() {
+  const uniformsRef = useRef<LabUniforms>({
+    uHue: 0,
+    uGloss: 0,
+    uRoughness: 0,
+    uRim: 0,
+    uTrailIntensity: 0,
+    uTrailLength: 0,
+    uCompanionCount: 0,
+    uCompanionSize: 0,
+    uVignette: 0,
+    uBlur: 0,
+    uBob: 0,
+  });
+
+  const [active, setActive] = useState<TabKey>("Emblem");
+
+  const [hue, setHue] = useUniform(
+    "lab:hue",
+    "uHue",
+    0.5,
+    uniformsRef
+  );
+  const [gloss, setGloss] = useUniform(
+    "lab:gloss",
+    "uGloss",
+    0.5,
+    uniformsRef
+  );
+  const [rough, setRough] = useUniform(
+    "lab:rough",
+    "uRoughness",
+    0.5,
+    uniformsRef
+  );
+  const [rim, setRim] = useUniform(
+    "lab:rim",
+    "uRim",
+    0.5,
+    uniformsRef
+  );
+  const [trail, setTrail] = useUniform(
+    "lab:trail",
+    "uTrailIntensity",
+    0,
+    uniformsRef
+  );
+  const [length, setLength] = useUniform(
+    "lab:length",
+    "uTrailLength",
+    0.5,
+    uniformsRef
+  );
+  const [count, setCount] = useUniform(
+    "lab:compCount",
+    "uCompanionCount",
+    0,
+    uniformsRef
+  );
+  const [size, setSize] = useUniform(
+    "lab:compSize",
+    "uCompanionSize",
+    0.2,
+    uniformsRef
+  );
+  const [vig, setVig] = useUniform(
+    "lab:vignette",
+    "uVignette",
+    0.3,
+    uniformsRef
+  );
+  const [blur, setBlur] = useUniform(
+    "lab:blur",
+    "uBlur",
+    0,
+    uniformsRef
+  );
+
+  const [skinName, setSkinName] = useState("");
+
+  useEffect(() => {
+    const canvas = document.getElementById("labCanvas") as HTMLCanvasElement;
+    if (!canvas) return;
+    const handle = initLabRenderer(canvas, uniformsRef.current);
+    return () => handle.dispose();
+  }, []);
+
+  const exportJSON = () => {
+    const data = {
+      hue,
+      gloss,
+      rough,
+      rim,
+      trail,
+      length,
+      count,
+      size,
+      vig,
+      blur,
+    };
+    const blob = new Blob([JSON.stringify(data)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${skinName || "skin"}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="lab-page">
-      <section className="preview-card">
-        <div className="preview-inner">
-          <div className="canvas-mount" ref={mountRef} />
-        </div>
-      </section>
+    <div className="lab-root">
+      <canvas id="labCanvas" className="lab-canvas" />
+      <nav className="lab-topnav">
+        <a href="/" className="chip">
+          Home
+        </a>
+        <a href="/lab" className="chip is-active">
+          Lab Tool
+        </a>
+      </nav>
 
-      <section className="glass-panel">
-        <header className="panel-head">
-          <div className="chips">
+      <section className="lab-dock" role="region" aria-label="Lab controls">
+        <div className="dock-tabs" role="tablist" aria-label="Layers">
+          {["Emblem", "Companion", "Trail", "Background", "Skins"].map((k) => (
             <button
-              className={`chip ${presetKey === "planet" ? "is-active" : ""}`}
-              onClick={() => applyPreset("planet")}
-            >
-              Planet
-            </button>
-            <button
-              className={`chip ${presetKey === "neon" ? "is-active" : ""}`}
-              onClick={() => applyPreset("neon")}
-            >
-              Neon
-            </button>
-            <button
-              className={`chip ${presetKey === "minimal" ? "is-active" : ""}`}
-              onClick={() => applyPreset("minimal")}
-            >
-              Minimal
-            </button>
-          </div>
-        </header>
-
-        <div className="control">
-          <label>Master: {state.master.toFixed(2)}</label>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={state.master}
-            onChange={(e) =>
-              setState((s) => ({
-                ...s,
-                master: (e.currentTarget as HTMLInputElement).valueAsNumber,
-              }))
-            }
-          />
-        </div>
-
-        <div className="grid two">
-          <div className="control">
-            <label>Hue: {(state.emblem.hue * 360) | 0}°</label>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.001}
-              value={state.emblem.hue}
-              onChange={(e) =>
-                setState((s) => ({
-                  ...s,
-                  emblem: {
-                    ...s.emblem,
-                    hue: (e.currentTarget as HTMLInputElement).valueAsNumber,
-                  },
-                }))
-              }
-            />
-          </div>
-          <div className="control">
-            <label>Gloss: {state.emblem.gloss.toFixed(2)}</label>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={state.emblem.gloss}
-              onChange={(e) =>
-                setState((s) => ({
-                  ...s,
-                  emblem: {
-                    ...s.emblem,
-                    gloss: (e.currentTarget as HTMLInputElement).valueAsNumber,
-                  },
-                }))
-              }
-            />
-          </div>
-          <div className="control">
-            <label>Roughness: {state.emblem.roughness.toFixed(2)}</label>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={state.emblem.roughness}
-              onChange={(e) =>
-                setState((s) => ({
-                  ...s,
-                  emblem: {
-                    ...s.emblem,
-                    roughness: (e.currentTarget as HTMLInputElement).valueAsNumber,
-                  },
-                }))
-              }
-            />
-          </div>
-          <div className="control">
-            <label>Rim: {state.emblem.rim.toFixed(2)}</label>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={state.emblem.rim}
-              onChange={(e) =>
-                setState((s) => ({
-                  ...s,
-                  emblem: {
-                    ...s.emblem,
-                    rim: (e.currentTarget as HTMLInputElement).valueAsNumber,
-                  },
-                }))
-              }
-            />
-          </div>
-        </div>
-
-        <footer className="panel-foot">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const i = e.currentTarget.elements.namedItem("skinName") as HTMLInputElement;
-              if (i.value.trim()) {
-                saveSkin(i.value.trim());
-                i.value = "";
-              }
-            }}
-          >
-            <input name="skinName" placeholder="Skin name…" />
-            <button type="submit">Save Skin</button>
-            <button
+              key={k}
+              role="tab"
+              aria-selected={active === k}
+              className={`dock-tab ${active === k ? "is-active" : ""}`}
+              onClick={() => setActive(k as TabKey)}
               type="button"
-              onClick={() => {
-                const json = JSON.stringify({ presetKey, state }, null, 2);
-                const blob = new Blob([json], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `skin-${Date.now()}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-              }}
             >
-              Export JSON
+              {k}
             </button>
-          </form>
-        </footer>
+          ))}
+        </div>
+
+        <div className="dock-panel">
+          {active === "Emblem" && (
+            <div className="panel-grid">
+              <LabeledRange
+                label={`Hue: ${Math.round(hue * 360)}°`}
+                min={0}
+                max={1}
+                step={0.001}
+                value={hue}
+                onChange={setHue}
+              />
+              <LabeledRange
+                label={`Gloss: ${gloss.toFixed(2)}`}
+                min={0}
+                max={1}
+                step={0.001}
+                value={gloss}
+                onChange={setGloss}
+              />
+              <LabeledRange
+                label={`Roughness: ${rough.toFixed(2)}`}
+                min={0}
+                max={1}
+                step={0.001}
+                value={rough}
+                onChange={setRough}
+              />
+              <LabeledRange
+                label={`Rim: ${rim.toFixed(2)}`}
+                min={0}
+                max={1}
+                step={0.001}
+                value={rim}
+                onChange={setRim}
+              />
+            </div>
+          )}
+          {active === "Companion" && (
+            <div className="panel-grid">
+              <LabeledRange
+                label={`Count: ${count}`}
+                min={0}
+                max={10}
+                step={1}
+                value={count}
+                onChange={setCount}
+              />
+              <LabeledRange
+                label={`Size: ${size.toFixed(2)}`}
+                min={0.05}
+                max={0.6}
+                step={0.01}
+                value={size}
+                onChange={setSize}
+              />
+            </div>
+          )}
+          {active === "Trail" && (
+            <div className="panel-grid">
+              <LabeledRange
+                label={`Intensity: ${trail.toFixed(2)}`}
+                min={0}
+                max={1}
+                step={0.001}
+                value={trail}
+                onChange={setTrail}
+              />
+              <LabeledRange
+                label={`Length: ${length.toFixed(2)}`}
+                min={0}
+                max={1}
+                step={0.001}
+                value={length}
+                onChange={setLength}
+              />
+            </div>
+          )}
+          {active === "Background" && (
+            <div className="panel-grid">
+              <LabeledRange
+                label={`Vignette: ${vig.toFixed(2)}`}
+                min={0}
+                max={1}
+                step={0.001}
+                value={vig}
+                onChange={setVig}
+              />
+              <LabeledRange
+                label={`Blur: ${blur.toFixed(2)}`}
+                min={0}
+                max={1}
+                step={0.001}
+                value={blur}
+                onChange={setBlur}
+              />
+            </div>
+          )}
+          {active === "Skins" && (
+            <div className="panel-grid">
+              <input
+                className="skin-input"
+                placeholder="Skin name…"
+                value={skinName}
+                onChange={(e) => setSkinName(e.target.value)}
+              />
+              <button
+                className="btn primary"
+                type="button"
+                onClick={exportJSON}
+              >
+                Export JSON
+              </button>
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );
 }
+

@@ -198,6 +198,53 @@ html, body, #root, .page { background: transparent; }
   animation: titleFloat 6s ease-in-out infinite;
 }
 
+:root { --dock-h: clamp(150px, 28vh, 220px); --glass: rgba(12,12,18,0.52); --ring: rgba(255,255,255,0.08); }
+html,body,#root { height:100%; background:#0b0b12; overscroll-behavior:none; }
+.lab-root { position:fixed; inset:0; display:grid; grid-template-rows: 1fr; }
+.lab-canvas { position:fixed; inset:0; width:100%; height:100%; display:block; z-index:0; }
+
+.lab-topnav {
+  position:fixed; top:16px; right:16px; display:flex; gap:12px; z-index:3;
+}
+.chip { padding:10px 16px; border-radius:12px; background:var(--glass); color:#e8ecff; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border:1px solid var(--ring); }
+.chip.is-active { box-shadow:0 0 0 2px rgba(120,160,255,0.35) inset; }
+
+.lab-dock {
+  position:fixed; left:0; right:0; bottom:0; z-index:2;
+  padding: max(env(safe-area-inset-bottom), 12px) 12px 12px;
+  display:grid; gap:10px;
+}
+.dock-tabs {
+  display:flex; gap:8px; justify-content:center; flex-wrap:wrap;
+}
+.dock-tab {
+  padding:10px 14px; border-radius:12px; background:var(--glass);
+  color:#cfe3ff; border:1px solid var(--ring); backdrop-filter: blur(14px);
+}
+.dock-tab.is-active { box-shadow:0 0 0 2px rgba(135,180,255,0.35) inset; color:#fff; }
+
+.dock-panel {
+  margin:0 auto; width:min(920px, 96vw);
+  background:linear-gradient(180deg, rgba(14,16,24,0.55), rgba(10,12,18,0.45));
+  border:1px solid var(--ring);
+  border-radius:18px;
+  padding:12px 14px;
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  box-shadow:
+    0 12px 40px rgba(0,0,0,0.45),
+    0 1px 0 rgba(255,255,255,0.06) inset;
+}
+.panel-grid { display:grid; grid-template-columns: 1fr; gap:10px; }
+@media (min-width: 800px) { .panel-grid { grid-template-columns: 1fr 1fr; } }
+
+.labeled { display:grid; gap:6px; }
+.labeled label { font-weight:600; color:#e9efff; text-shadow:0 1px 0 rgba(0,0,0,0.4); }
+.labeled input[type="range"]{ width:100%; touch-action:none; accent-color:#5ea0ff; }
+
+.skin-input{ width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--ring); background:rgba(255,255,255,0.06); color:#fff; }
+.btn.primary{ padding:10px 14px; border-radius:12px; background:#17b26a; color:#04110a; font-weight:700; }
+
 /* Lab page wrapper */
 .lab-page { padding:16px; }
 
