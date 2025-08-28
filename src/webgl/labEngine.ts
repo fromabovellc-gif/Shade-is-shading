@@ -68,9 +68,10 @@ export function createLabEngine(canvas: HTMLCanvasElement, uniformsRef: React.Mu
 
   const fit = () => {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
     gl.viewport(0, 0, canvas.width, canvas.height);
   };
   fit();
