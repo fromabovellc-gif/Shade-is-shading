@@ -1,126 +1,222 @@
-import React, { useState, useEffect, useRef } from 'react';
-import Tabs, { TabKey } from './Tabs';
-import { createLabEngine, Uniforms } from '../webgl/labEngine';
+import React, { useEffect, useRef, useState } from 'react';
+import { initLabGL } from './gl';
 import '../index.css';
 
-const ls = (k: string, fallback: number) => Number(localStorage.getItem(k) ?? fallback);
+const lsNum = (k: string, d: number) => Number(localStorage.getItem(k) ?? d);
 
-type Theme = 'planet' | 'neon' | 'minimal';
-const THEME_COLORS: Record<Theme, { A: [number, number, number]; B: [number, number, number] }> = {
-  planet: { A: [0.2, 0.6, 1.0], B: [0.0, 0.0, 0.0] },
-  neon: { A: [1.0, 0.3, 0.7], B: [0.0, 0.0, 0.0] },
-  minimal: { A: [1.0, 1.0, 1.0], B: [0.0, 0.0, 0.0] },
+interface Skin {
+  name: string;
+  master: number;
+  emblemHue: number;
+  emblemGloss: number;
+  emblemRough: number;
+  rim: number;
+  companion: number;
+  trail: number;
+  background: number;
+  createdAt: number;
+}
+
+const useDebouncedLS = (key: string, value: number) => {
+  useEffect(() => {
+    const id = setTimeout(() => localStorage.setItem(key, String(value)), 150);
+    return () => clearTimeout(id);
+  }, [key, value]);
 };
 
 export default function LabTool() {
-  const [master, setMaster] = useState(ls('lab:master', 0.6));
-  const [emblem, setEmblem] = useState(ls('lab:emblem', 0.7));
-  const [companion, setCompanion] = useState(ls('lab:companion', 0.5));
-  const [trail, setTrail] = useState(ls('lab:trail', 0.6));
-  const [background, setBackground] = useState(ls('lab:background', 0.4));
-  const [theme, setTheme] = useState<Theme>((localStorage.getItem('lab:theme') as Theme) || 'planet');
-  const [optionsOpen, setOptionsOpen] = useState(localStorage.getItem('lab:optionsOpen') === 'true');
-  const uniformsRef = useRef<Uniforms>({
-    master,
-    emblem,
-    companion,
-    trail,
-    background,
-    themeA: THEME_COLORS[theme].A,
-    themeB: THEME_COLORS[theme].B,
+  const [master, setMaster] = useState(lsNum('lab:master', 0.8));
+  const [emblemHue, setEmblemHue] = useState(lsNum('lab:emblemHue', 0.6));
+  const [emblemGloss, setEmblemGloss] = useState(lsNum('lab:emblemGloss', 0.5));
+  const [emblemRough, setEmblemRough] = useState(lsNum('lab:emblemRough', 0.4));
+  const [rim, setRim] = useState(lsNum('lab:rim', 0.6));
+  const [companion, setCompanion] = useState(lsNum('lab:companion', 0.6));
+  const [trail, setTrail] = useState(lsNum('lab:trail', 0.7));
+  const [background, setBackground] = useState(lsNum('lab:background', 0.5));
+  const [skins, setSkins] = useState<Skin[]>(() => {
+    try { return JSON.parse(localStorage.getItem('lab:skins') || '[]'); } catch { return []; }
   });
+
+  useDebouncedLS('lab:master', master);
+  useDebouncedLS('lab:emblemHue', emblemHue);
+  useDebouncedLS('lab:emblemGloss', emblemGloss);
+  useDebouncedLS('lab:emblemRough', emblemRough);
+  useDebouncedLS('lab:rim', rim);
+  useDebouncedLS('lab:companion', companion);
+  useDebouncedLS('lab:trail', trail);
+  useDebouncedLS('lab:background', background);
+  useEffect(() => { const id = setTimeout(() => localStorage.setItem('lab:skins', JSON.stringify(skins)), 150); return () => clearTimeout(id); }, [skins]);
+
+  const valuesRef = useRef({ master, emblemHue, emblemGloss, emblemRough, rim, companion, trail, background });
+  useEffect(() => { valuesRef.current = { master, emblemHue, emblemGloss, emblemRough, rim, companion, trail, background }; }, [master, emblemHue, emblemGloss, emblemRough, rim, companion, trail, background]);
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  useEffect(() => { const t=setTimeout(()=>localStorage.setItem('lab:master', String(master)),150); return()=>clearTimeout(t); }, [master]);
-  useEffect(() => { const t=setTimeout(()=>localStorage.setItem('lab:emblem', String(emblem)),150); return()=>clearTimeout(t); }, [emblem]);
-  useEffect(() => { const t=setTimeout(()=>localStorage.setItem('lab:companion', String(companion)),150); return()=>clearTimeout(t); }, [companion]);
-  useEffect(() => { const t=setTimeout(()=>localStorage.setItem('lab:trail', String(trail)),150); return()=>clearTimeout(t); }, [trail]);
-  useEffect(() => { const t=setTimeout(()=>localStorage.setItem('lab:background', String(background)),150); return()=>clearTimeout(t); }, [background]);
-  useEffect(() => { const t=setTimeout(()=>localStorage.setItem('lab:theme', theme),150); return()=>clearTimeout(t); }, [theme]);
-  useEffect(() => { localStorage.setItem('lab:optionsOpen', String(optionsOpen)); }, [optionsOpen]);
-
   useEffect(() => {
-    uniformsRef.current.master = master;
-    uniformsRef.current.emblem = emblem;
-    uniformsRef.current.companion = companion;
-    uniformsRef.current.trail = trail;
-    uniformsRef.current.background = background;
-    const { A, B } = THEME_COLORS[theme];
-    uniformsRef.current.themeA = A;
-    uniformsRef.current.themeB = B;
-  }, [master, emblem, companion, trail, background, theme]);
+    document.body.classList.add('lab-lock');
+    return () => document.body.classList.remove('lab-lock');
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const engine = createLabEngine(canvas, uniformsRef);
-    return () => engine.dispose();
+    const gl = initLabGL(canvas);
+    const handle = () => gl.resize();
+    window.addEventListener('resize', handle);
+    let raf = 0;
+    const start = performance.now();
+    const frame = () => {
+      raf = requestAnimationFrame(frame);
+      const t = (performance.now() - start) / 1000;
+      const v = valuesRef.current;
+      const u = gl.uniforms;
+      const g = gl.gl;
+      g.uniform1f(u.uMaster, v.master);
+      g.uniform1f(u.uEmblemHue, v.emblemHue);
+      g.uniform1f(u.uEmblemGloss, v.emblemGloss * v.master);
+      g.uniform1f(u.uEmblemRough, v.emblemRough);
+      g.uniform1f(u.uRimStrength, v.rim);
+      g.uniform1f(u.uCompanion, v.companion * v.master);
+      g.uniform1f(u.uTrail, v.trail * v.master);
+      g.uniform1f(u.uBackground, v.background * v.master);
+      gl.render(t);
+    };
+    frame();
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', handle); };
   }, []);
 
-  const [active, setActive] = useState<TabKey>('emblem');
   const num = (e: React.ChangeEvent<HTMLInputElement>) => e.currentTarget.valueAsNumber;
 
-  const reset = () => {
-    ['lab:master','lab:emblem','lab:companion','lab:trail','lab:background','lab:theme'].forEach(k=>localStorage.removeItem(k));
-    setMaster(0.6); setEmblem(0.7); setCompanion(0.5); setTrail(0.6); setBackground(0.4); setTheme('planet');
+  const saveSkin = () => {
+    const name = window.prompt('Skin name?') || `Skin ${skins.length + 1}`;
+    const preset: Skin = { name, master, emblemHue, emblemGloss, emblemRough, rim, companion, trail, background, createdAt: Date.now() };
+    setSkins(s => [...s, preset]);
+  };
+  const loadSkin = (s: Skin) => {
+    setMaster(s.master); setEmblemHue(s.emblemHue); setEmblemGloss(s.emblemGloss); setEmblemRough(s.emblemRough); setRim(s.rim); setCompanion(s.companion); setTrail(s.trail); setBackground(s.background);
+  };
+  const deleteSkin = (i: number) => setSkins(s => s.filter((_,idx)=>idx!==i));
+  const exportSkin = (s?: Skin) => {
+    const data = s || { master, emblemHue, emblemGloss, emblemRough, rim, companion, trail, background };
+    navigator.clipboard.writeText(JSON.stringify(data));
   };
 
-  const eff = {
-    master,
-    emblem: master * emblem,
-    companion: master * companion,
-    trail: master * trail,
-    background: master * background,
-  };
-
-  const slider = (label: string, value: number, setter: (n:number)=>void, effVal: number, help?: string) => (
-    <div className="lab-row">
+  const slider = (label: string, value: number, setter: (n:number)=>void, min=0, max=1, step=0.01) => (
+    <div className="row">
       <label>{label}: {value.toFixed(2)}</label>
-      <input type="range" min={0} max={1} step={0.01} value={value} onChange={e=>setter(num(e))} />
-      <small>Effective: {effVal.toFixed(2)}</small>
-      {help && <small>{help}</small>}
+      <input type="range" min={min} max={max} step={step} value={value} onChange={e=>setter(num(e))} />
+    </div>
+  );
+
+  const [activeDock, setActiveDock] = useState<string>('');
+  const [mobile, setMobile] = useState(() => window.innerWidth < 980);
+  useEffect(() => {
+    const onResize = () => setMobile(window.innerWidth < 980);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const dockTabs = [
+    { key: 'emblem', label: 'Emblem' },
+    { key: 'companion', label: 'Companion' },
+    { key: 'trail', label: 'Trail' },
+    { key: 'background', label: 'Background' },
+    { key: 'skins', label: 'Skins' }
+  ];
+
+  const DockCard = () => {
+    if (!activeDock) return null;
+    return (
+      <div className="dock-card">
+        {activeDock === 'emblem' && <>
+          {slider('Hue', emblemHue, setEmblemHue)}
+          {slider('Gloss', emblemGloss, setEmblemGloss)}
+          {slider('Rough', emblemRough, setEmblemRough)}
+          {slider('Rim', rim, setRim, 0, 2)}
+        </>}
+        {activeDock === 'companion' && slider('Companion', companion, setCompanion)}
+        {activeDock === 'trail' && slider('Trail', trail, setTrail)}
+        {activeDock === 'background' && slider('Background', background, setBackground)}
+        {activeDock === 'skins' && (
+          <div className="row">
+            <button onClick={saveSkin}>Save Skin</button>
+            <button onClick={() => exportSkin()}>Export JSON</button>
+            <ul>
+              {skins.map((s,i)=>(
+                <li key={s.createdAt}>
+                  {s.name}
+                  <button onClick={() => loadSkin(s)}>Load</button>
+                  <button onClick={() => deleteSkin(i)}>Delete</button>
+                  <button onClick={() => exportSkin(s)}>Copy</button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const ControlsPanel = () => (
+    <div className="controls-panel" style={{ overflowY:'auto', maxHeight:'calc(100vh - 24px)' }}>
+      <section>
+        <h3>Emblem</h3>
+        {slider('Hue', emblemHue, setEmblemHue)}
+        {slider('Gloss', emblemGloss, setEmblemGloss)}
+        {slider('Rough', emblemRough, setEmblemRough)}
+        {slider('Rim', rim, setRim, 0, 2)}
+      </section>
+      <section>
+        <h3>Companion</h3>
+        {slider('Companion', companion, setCompanion)}
+      </section>
+      <section>
+        <h3>Trail</h3>
+        {slider('Trail', trail, setTrail)}
+      </section>
+      <section>
+        <h3>Background</h3>
+        {slider('Background', background, setBackground)}
+      </section>
+      <section>
+        <h3>Skins</h3>
+        <button onClick={saveSkin}>Save Skin</button>
+        <button onClick={() => exportSkin()}>Export JSON</button>
+        <ul>
+          {skins.map((s,i)=>(
+            <li key={s.createdAt}>
+              {s.name} <button onClick={()=>loadSkin(s)}>Load</button> <button onClick={()=>deleteSkin(i)}>Delete</button>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 
   return (
     <div className="lab-page">
-      <div className="lab-layout">
-        <section className="lab-preview">
-          <h2 className="lab-title">Shader Lab</h2>
-          <canvas id="labCanvas" ref={canvasRef} className="shader-canvas" />
-        </section>
-        <div className="lab-card">
-          <Tabs active={active} onChange={setActive} />
-          {active === 'emblem' && slider('Emblem', emblem, setEmblem, eff.emblem)}
-          {active === 'companion' && slider('Companion', companion, setCompanion, eff.companion)}
-          {active === 'trail' && slider('Trail', trail, setTrail, eff.trail)}
-          {active === 'background' && slider('Background', background, setBackground, eff.background)}
-          <div className="lab-footer"><button className="lab-reset" onClick={reset}>Reset All</button></div>
-          <div className="lab-options">
-            <button className="lab-options-toggle" onClick={() => setOptionsOpen(o=>!o)}>⚙️ Lab Options</button>
-            {optionsOpen && (
-              <div className="lab-options-body">
-                <div className="lab-row">
-                  <label>Lab Themes</label>
-                  <div className="lab-themes lab-tabs">
-                    {(['planet','neon','minimal'] as Theme[]).map(t => (
-                      <button
-                        key={t}
-                        className={`lab-tab ${theme===t ? 'is-active' : ''}`}
-                        onClick={() => setTheme(t)}
-                        type="button"
-                      >
-                        {t[0].toUpperCase() + t.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {slider('Master (global influence)', master, setMaster, eff.master, 'Scales all other sliders.')}
-              </div>
-            )}
+      {mobile ? (
+        <>
+          <div className="lab-canvas"><canvas ref={canvasRef} /></div>
+          {activeDock && <DockCard />}
+          <div className="dock">
+            <div className="dock-tabs">
+              {dockTabs.map(t => (
+                <button key={t.key} className={`dock-btn ${activeDock===t.key?'is-active':''}`} onClick={()=>setActiveDock(t.key)}>{t.label}</button>
+              ))}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="lab-split">
+          <div className="lab-left">
+            <div className="lab-canvas"><canvas ref={canvasRef} /></div>
+          </div>
+          <div className="lab-right">
+            <ControlsPanel />
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
