@@ -318,3 +318,22 @@ html, body, #root, .page { background: transparent; }
   .dock-tabs{ gap:8px; }
 }
 
+.lab-page{min-height:100vh;padding:16px;}
+.preview-card{border-radius:24px;background:rgba(10,12,18,.85);box-shadow:0 18px 60px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.05) inset;overflow:hidden;}
+.preview-inner{padding:20px;}
+.canvas-mount{height:clamp(320px,52vw,520px);border-radius:20px;background:radial-gradient(120% 120% at 50% 40%,#3b2c57 0%,#151826 70%);box-shadow:0 20px 50px rgba(0,0,0,.35),0 0 1px rgba(255,255,255,.12) inset;position:relative;}
+.glass-panel{position:relative;border-radius:22px;padding:16px;background:linear-gradient(to bottom right,rgba(255,255,255,.08),rgba(255,255,255,.03));backdrop-filter:blur(10px) saturate(130%);-webkit-backdrop-filter:blur(10px) saturate(130%);box-shadow:0 18px 60px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.06) inset;}
+.glass-panel::after{content:"";position:absolute;inset:0;border-radius:22px;pointer-events:none;box-shadow:0 1px 16px rgba(255,255,255,.08) inset;}
+.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.chips{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:#e9ecff;font-weight:600;}
+.chip.is-active{background:rgba(98,132,255,.22);border-color:rgba(98,132,255,.45);box-shadow:0 0 0 3px rgba(98,132,255,.18) inset;}
+.control{display:grid;gap:6px;margin:12px 0;}
+.control label{font-weight:600;color:#e8eaf6;}
+.control input[type=range]{width:100%;touch-action:none;}
+.grid.two{display:grid;grid-template-columns:1fr;gap:12px;}
+@media (min-width:680px){.grid.two{grid-template-columns:1fr 1fr;}}
+.panel-foot form{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.panel-foot input{flex:1 1 220px;border-radius:12px;padding:10px 12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;}
+.panel-foot button{border-radius:12px;padding:10px 14px;font-weight:700;color:#0c1220;background:linear-gradient(180deg,#6fd3ff,#57b0ff);border:1px solid rgba(255,255,255,.18);}
+.panel-foot button:nth-child(3){background:linear-gradient(180deg,#b0ffa6,#74e38d);}
