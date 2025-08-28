@@ -20,7 +20,7 @@ body {
   border: 2px solid #222;
   padding: 16px;
 }
-.shader-canvas { display:block; width:100%; height:auto; }
+.shader-canvas { display:block; width:100%; height:auto; border-radius:16px; }
 
 
 .app-root {
@@ -223,3 +223,6 @@ html, body, #root, .page { background: transparent; }
 .lab-row input[type="range"] { width:100%; touch-action:none; }
 .lab-footer { margin-top: 12px; display:flex; justify-content:flex-end; }
 .lab-reset { background:#fff; border:1px solid #cfd4dc; border-radius:10px; padding:10px 14px; font-weight:700; }
+.lab-options { margin-top:12px; }
+.lab-options-toggle { width:100%; text-align:left; background:#fff; border:1px solid #cfd4dc; border-radius:10px; padding:8px 12px; font-weight:600; cursor:pointer; }
+.lab-options-body { margin-top:12px; }
