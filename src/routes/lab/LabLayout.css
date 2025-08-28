@@ -1,0 +1,70 @@
+.lab-page {
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: auto 1fr auto; /* header, preview, dock */
+  overflow: hidden;                   /* no page scroll */
+}
+
+.lab-header {
+  display: flex; gap: 8px; justify-content: flex-end;
+  padding: 12px;
+}
+
+.lab-preview {
+  position: relative;
+  display: grid; place-items: center;
+  padding: 12px;
+}
+
+.lab-canvas {
+  width: 100%;
+  max-width: 1100px;
+  aspect-ratio: 16 / 10;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0,0,0,.35);
+}
+
+.lab-dock {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto; /* panel, tabs */
+  gap: 8px;
+  padding: 10px 12px 14px;
+  background: linear-gradient(180deg, rgba(7,10,23,.55), rgba(7,10,23,.85));
+  backdrop-filter: blur(8px);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.lab-panel {
+  max-width: 1100px;
+  margin: 0 auto;
+  border-radius: 14px;
+  background: rgba(0,0,0,.75);
+  color: #eef2ff;
+  padding: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  max-height: 28svh;        /* panel never covers canvas */
+  overflow: auto;           /* panel itself scrolls if needed */
+  -webkit-overflow-scrolling: touch;
+}
+
+.lab-tabs {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+}
+
+.lab-tab {
+  border: 1px solid #2b3555; background:#0b1224; color:#cbd5ff;
+  padding: 10px 14px; border-radius: 12px; font-weight: 700;
+}
+.lab-tab.is-active { outline: 3px solid rgba(96,150,255,.35) }
+
+.lab-row { display: grid; gap: 8px; margin: 10px 0 }
+.lab-range { width: 100%; touch-action: none }
+
+@media (min-width: 920px) {
+  .lab-panel { max-height: 24svh; }
+}
