@@ -50,19 +50,21 @@ export function createLabEngine(canvas: HTMLCanvasElement, uniformsRef: React.Mu
     ]),
     gl.STATIC_DRAW
   );
-  const loc = gl.getAttribLocation(prog, 'position');
-  gl.enableVertexAttribArray(loc);
-  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const posLoc = gl.getAttribLocation(prog, 'position');
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
 
-  const uTime = gl.getUniformLocation(prog, 'uTime');
-  const uResolution = gl.getUniformLocation(prog, 'uResolution');
-  const uMaster = gl.getUniformLocation(prog, 'uMaster');
-  const uEmblem = gl.getUniformLocation(prog, 'uEmblem');
-  const uCompanion = gl.getUniformLocation(prog, 'uCompanion');
-  const uTrail = gl.getUniformLocation(prog, 'uTrail');
-  const uBackground = gl.getUniformLocation(prog, 'uBackground');
-  const uThemeA = gl.getUniformLocation(prog, 'uThemeA');
-  const uThemeB = gl.getUniformLocation(prog, 'uThemeB');
+  const loc = {
+    uTime: gl.getUniformLocation(prog, 'uTime'),
+    uResolution: gl.getUniformLocation(prog, 'uResolution'),
+    uMaster: gl.getUniformLocation(prog, 'uMaster'),
+    uEmblem: gl.getUniformLocation(prog, 'uEmblem'),
+    uCompanion: gl.getUniformLocation(prog, 'uCompanion'),
+    uTrail: gl.getUniformLocation(prog, 'uTrail'),
+    uBackground: gl.getUniformLocation(prog, 'uBackground'),
+    uThemeA: gl.getUniformLocation(prog, 'uThemeA'),
+    uThemeB: gl.getUniformLocation(prog, 'uThemeB'),
+  } as const;
 
   const fit = () => {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -79,16 +81,16 @@ export function createLabEngine(canvas: HTMLCanvasElement, uniformsRef: React.Mu
   const frame = () => {
     raf = requestAnimationFrame(frame);
     const t = (performance.now() - start) / 1000;
-    gl.uniform1f(uTime, t);
-    gl.uniform2f(uResolution, canvas.width, canvas.height);
+    gl.uniform1f(loc.uTime, t);
+    gl.uniform2f(loc.uResolution, canvas.width, canvas.height);
     const u = uniformsRef.current;
-    gl.uniform1f(uMaster, u.master);
-    gl.uniform1f(uEmblem, u.emblem);
-    gl.uniform1f(uCompanion, u.companion);
-    gl.uniform1f(uTrail, u.trail);
-    gl.uniform1f(uBackground, u.background);
-    gl.uniform3fv(uThemeA, u.themeA);
-    gl.uniform3fv(uThemeB, u.themeB);
+    gl.uniform1f(loc.uMaster, u.master);
+    gl.uniform1f(loc.uEmblem, u.master * u.emblem);
+    gl.uniform1f(loc.uCompanion, u.master * u.companion);
+    gl.uniform1f(loc.uTrail, u.master * u.trail);
+    gl.uniform1f(loc.uBackground, u.master * u.background);
+    gl.uniform3fv(loc.uThemeA, u.themeA);
+    gl.uniform3fv(loc.uThemeB, u.themeB);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   };
   frame();
