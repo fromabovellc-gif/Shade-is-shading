@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import initLabRenderer, {
   type LabUniforms,
 } from "../../lib/gl/labRenderer";
+import "../../styles/lab.css";
 
 type TabKey =
   | "Emblem"
@@ -14,12 +15,13 @@ function useUniform(
   key: string,
   uniformKey: keyof LabUniforms,
   initial: number,
-  uniformsRef: React.MutableRefObject<LabUniforms>
+  uniformsRef: React.MutableRefObject<LabUniforms>,
+  map: (v: number) => number = (v) => v
 ) {
   const [value, setValue] = useState(() => {
     const stored = localStorage.getItem(key);
     const num = stored !== null ? parseFloat(stored) : initial;
-    uniformsRef.current[uniformKey] = num;
+    uniformsRef.current[uniformKey] = map(num);
     return num;
   });
 
@@ -27,7 +29,7 @@ function useUniform(
 
   const set = (v: number) => {
     setValue(v);
-    uniformsRef.current[uniformKey] = v;
+    uniformsRef.current[uniformKey] = map(v);
     window.clearTimeout(timeout.current);
     timeout.current = window.setTimeout(() => {
       localStorage.setItem(key, v.toString());
@@ -37,35 +39,6 @@ function useUniform(
   return [value, set] as const;
 }
 
-function LabeledRange({
-  label,
-  min,
-  max,
-  step,
-  value,
-  onChange,
-}: {
-  label: string;
-  min: number;
-  max: number;
-  step: number;
-  value: number;
-  onChange: (v: number) => void;
-}) {
-  return (
-    <div className="labeled">
-      <label>{label}</label>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(e.currentTarget.valueAsNumber)}
-      />
-    </div>
-  );
-}
 
 export default function LabTool() {
   const uniformsRef = useRef<LabUniforms>({
@@ -82,13 +55,14 @@ export default function LabTool() {
     uBob: 0,
   });
 
-  const [active, setActive] = useState<TabKey>("Emblem");
+  const [activeTab, setActiveTab] = useState<TabKey>("Emblem");
 
-  const [hue, setHue] = useUniform(
+  const [hueDeg, setHueDeg] = useUniform(
     "lab:hue",
     "uHue",
-    0.5,
-    uniformsRef
+    180,
+    uniformsRef,
+    (v) => v / 360
   );
   const [gloss, setGloss] = useUniform(
     "lab:gloss",
@@ -96,7 +70,7 @@ export default function LabTool() {
     0.5,
     uniformsRef
   );
-  const [rough, setRough] = useUniform(
+  const [roughness, setRoughness] = useUniform(
     "lab:rough",
     "uRoughness",
     0.5,
@@ -132,16 +106,16 @@ export default function LabTool() {
     0.2,
     uniformsRef
   );
-  const [vig, setVig] = useUniform(
+  const [atmosphere, setAtmosphere] = useUniform(
     "lab:vignette",
     "uVignette",
-    0.3,
+    0.85,
     uniformsRef
   );
-  const [blur, setBlur] = useUniform(
+  const [grain, setGrain] = useUniform(
     "lab:blur",
     "uBlur",
-    0,
+    0.1,
     uniformsRef
   );
 
@@ -156,16 +130,16 @@ export default function LabTool() {
 
   const exportJSON = () => {
     const data = {
-      hue,
+      hueDeg,
       gloss,
-      rough,
+      roughness,
       rim,
       trail,
       length,
       count,
       size,
-      vig,
-      blur,
+      atmosphere,
+      grain,
     };
     const blob = new Blob([JSON.stringify(data)], {
       type: "application/json",
@@ -190,139 +164,122 @@ export default function LabTool() {
         </a>
       </nav>
 
-      <section className="lab-dock" role="region" aria-label="Lab controls">
-        <div className="dock-tabs" role="tablist" aria-label="Layers">
-          {["Emblem", "Companion", "Trail", "Background", "Skins"].map((k) => (
-            <button
-              key={k}
-              role="tab"
-              aria-selected={active === k}
-              className={`dock-tab ${active === k ? "is-active" : ""}`}
-              onClick={() => setActive(k as TabKey)}
-              type="button"
-            >
-              {k}
-            </button>
-          ))}
-        </div>
-
-        <div className="dock-panel">
-          {active === "Emblem" && (
-            <div className="panel-grid">
-              <LabeledRange
-                label={`Hue: ${Math.round(hue * 360)}°`}
-                min={0}
-                max={1}
-                step={0.001}
-                value={hue}
-                onChange={setHue}
-              />
-              <LabeledRange
-                label={`Gloss: ${gloss.toFixed(2)}`}
-                min={0}
-                max={1}
-                step={0.001}
-                value={gloss}
-                onChange={setGloss}
-              />
-              <LabeledRange
-                label={`Roughness: ${rough.toFixed(2)}`}
-                min={0}
-                max={1}
-                step={0.001}
-                value={rough}
-                onChange={setRough}
-              />
-              <LabeledRange
-                label={`Rim: ${rim.toFixed(2)}`}
-                min={0}
-                max={1}
-                step={0.001}
-                value={rim}
-                onChange={setRim}
-              />
-            </div>
-          )}
-          {active === "Companion" && (
-            <div className="panel-grid">
-              <LabeledRange
-                label={`Count: ${count}`}
-                min={0}
-                max={10}
-                step={1}
-                value={count}
-                onChange={setCount}
-              />
-              <LabeledRange
-                label={`Size: ${size.toFixed(2)}`}
-                min={0.05}
-                max={0.6}
-                step={0.01}
-                value={size}
-                onChange={setSize}
-              />
-            </div>
-          )}
-          {active === "Trail" && (
-            <div className="panel-grid">
-              <LabeledRange
-                label={`Intensity: ${trail.toFixed(2)}`}
-                min={0}
-                max={1}
-                step={0.001}
-                value={trail}
-                onChange={setTrail}
-              />
-              <LabeledRange
-                label={`Length: ${length.toFixed(2)}`}
-                min={0}
-                max={1}
-                step={0.001}
-                value={length}
-                onChange={setLength}
-              />
-            </div>
-          )}
-          {active === "Background" && (
-            <div className="panel-grid">
-              <LabeledRange
-                label={`Vignette: ${vig.toFixed(2)}`}
-                min={0}
-                max={1}
-                step={0.001}
-                value={vig}
-                onChange={setVig}
-              />
-              <LabeledRange
-                label={`Blur: ${blur.toFixed(2)}`}
-                min={0}
-                max={1}
-                step={0.001}
-                value={blur}
-                onChange={setBlur}
-              />
-            </div>
-          )}
-          {active === "Skins" && (
-            <div className="panel-grid">
-              <input
-                className="skin-input"
-                placeholder="Skin name…"
-                value={skinName}
-                onChange={(e) => setSkinName(e.target.value)}
-              />
+      <div className="dock">
+        <div className="dock-card">
+          <div className="tabs" role="tablist" aria-label="Lab controls">
+            {(['Emblem','Companion','Trail','Background','Skins'] as const).map(t => (
               <button
-                className="btn primary"
+                key={t}
+                className={`tab ${activeTab===t ? 'is-active' : ''}`}
+                role="tab"
+                aria-selected={activeTab===t}
+                onClick={()=>setActiveTab(t)}
                 type="button"
-                onClick={exportJSON}
-              >
-                Export JSON
-              </button>
+              >{t}</button>
+            ))}
+          </div>
+
+          {/* Show exactly one page; keep state/handlers you already have */}
+          {activeTab==='Emblem' && (
+            <div className="sliders" role="tabpanel" aria-label="Emblem">
+              <div className="field">
+                <div className="row"><span>Hue</span><span className="value">{Math.round(hueDeg)}°</span></div>
+                <input type="range" min={0} max={360} step={1}
+                       value={hueDeg}
+                       onChange={e=>setHueDeg((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+              </div>
+              <div className="field">
+                <div className="row"><span>Gloss</span><span className="value">{gloss.toFixed(2)}</span></div>
+                <input type="range" min={0} max={1} step={0.01}
+                       value={gloss}
+                       onChange={e=>setGloss((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+              </div>
+              <div className="field">
+                <div className="row"><span>Roughness</span><span className="value">{roughness.toFixed(2)}</span></div>
+                <input type="range" min={0} max={1} step={0.01}
+                       value={roughness}
+                       onChange={e=>setRoughness((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+              </div>
+              <div className="field">
+                <div className="row"><span>Rim</span><span className="value">{rim.toFixed(2)}</span></div>
+                <input type="range" min={0} max={1} step={0.01}
+                       value={rim}
+                       onChange={e=>setRim((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+              </div>
             </div>
           )}
+          {activeTab==='Companion' && (
+            <div className="sliders" role="tabpanel" aria-label="Companion">
+              <div className="field">
+                <div className="row"><span>Count</span><span className="value">{count}</span></div>
+                <input type="range" min={0} max={10} step={1}
+                       value={count}
+                       onChange={e=>setCount((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+              </div>
+              <div className="field">
+                <div className="row"><span>Size</span><span className="value">{size.toFixed(2)}</span></div>
+                <input type="range" min={0.05} max={0.6} step={0.01}
+                       value={size}
+                       onChange={e=>setSize((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+              </div>
+            </div>
+          )}
+          {activeTab==='Trail' && (
+            <div className="sliders" role="tabpanel" aria-label="Trail">
+              <div className="field">
+                <div className="row"><span>Intensity</span><span className="value">{trail.toFixed(2)}</span></div>
+                <input type="range" min={0} max={1} step={0.01}
+                       value={trail}
+                       onChange={e=>setTrail((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+              </div>
+              <div className="field">
+                <div className="row"><span>Length</span><span className="value">{length.toFixed(2)}</span></div>
+                <input type="range" min={0} max={1} step={0.01}
+                       value={length}
+                       onChange={e=>setLength((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+              </div>
+            </div>
+          )}
+          {activeTab==='Background' && (
+            <div className="sliders" role="tabpanel" aria-label="Background">
+              <div className="field">
+                <div className="row"><span>Atmosphere</span><span className="value">{atmosphere.toFixed(2)}</span></div>
+                <input type="range" min={0.75} max={0.95} step={0.01}
+                       value={atmosphere}
+                       onChange={e=>setAtmosphere((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+              </div>
+              <div className="field">
+                <div className="row"><span>Grain</span><span className="value">{grain.toFixed(2)}</span></div>
+                <input type="range" min={0} max={0.35} step={0.01}
+                       value={grain}
+                       onChange={e=>setGrain((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+              </div>
+            </div>
+          )}
+          {activeTab==='Skins' && (
+            <div className="sliders" role="tabpanel" aria-label="Skins">
+              <div className="field">
+                <input
+                  className="skin-input"
+                  placeholder="Skin name"
+                  value={skinName}
+                  onChange={(e) => setSkinName(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <button
+                  className="btn primary"
+                  type="button"
+                  onClick={exportJSON}
+                >
+                  Export JSON
+                </button>
+              </div>
+            </div>
+          )}
+          </div>
         </div>
-      </section>
-    </div>
-  );
+      </div>
+    );
 }
 
