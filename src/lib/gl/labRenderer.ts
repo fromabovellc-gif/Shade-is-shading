@@ -16,7 +16,7 @@ export default function initLabRenderer(
   canvas: HTMLCanvasElement,
   uniforms: LabUniforms
 ) {
-  const gl = canvas.getContext("webgl2");
+  const gl = canvas.getContext("webgl2")!;
   if (!gl) {
     throw new Error("WebGL2 not supported");
   }

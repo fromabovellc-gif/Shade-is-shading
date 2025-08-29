@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import initLabRenderer, {
-  type LabUniforms,
-} from "../../lib/gl/labRenderer";
+import { initBackgroundRenderer, renderBackground } from "../../lab/backgroundRenderer";
+import { renderWorld } from "../../lab/worldRenderer";
+import type { LabUniforms } from "../../lib/gl/labRenderer";
 import "../../styles/lab.css";
 
 type TabKey =
@@ -121,11 +121,24 @@ export default function LabTool() {
 
   const [skinName, setSkinName] = useState("");
 
+  const activeTabRef = useRef<TabKey>("Emblem");
   useEffect(() => {
-    const canvas = document.getElementById("labCanvas") as HTMLCanvasElement;
-    if (!canvas) return;
-    const handle = initLabRenderer(canvas, uniformsRef.current);
-    return () => handle.dispose();
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  useEffect(() => {
+    const bgCanvas = document.getElementById("bg-canvas") as HTMLCanvasElement;
+    const worldCanvas = document.getElementById("world-canvas") as HTMLCanvasElement;
+    if (!bgCanvas || !worldCanvas) return;
+    initBackgroundRenderer(bgCanvas);
+    let raf = 0;
+    const frame = (t: number) => {
+      renderBackground(t);
+      renderWorld(t, worldCanvas, activeTabRef.current);
+      raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   const exportJSON = () => {
@@ -153,24 +166,16 @@ export default function LabTool() {
   };
 
   return (
-    <div className="lab-root">
-      <canvas id="labCanvas" className="lab-canvas" />
-      <nav className="lab-topnav">
-        <a href="/" className="chip">
-          Home
-        </a>
-        <a href="/lab" className="chip is-active">
-          Lab Tool
-        </a>
-      </nav>
-
-      <div className="dock">
+    <>
+      <canvas id="bg-canvas"></canvas>
+      <canvas id="world-canvas"></canvas>
+      <div id="ui-dock">
         <div className="dock-card">
           <div className="tabs" role="tablist" aria-label="Lab controls">
             {(['Emblem','Companion','Trail','Background','Skins'] as const).map(t => (
               <button
                 key={t}
-                className={`tab ${activeTab===t ? 'is-active' : ''}`}
+                className={`tab${activeTab===t ? ' active' : ''}`}
                 role="tab"
                 aria-selected={activeTab===t}
                 onClick={()=>setActiveTab(t)}
@@ -186,25 +191,25 @@ export default function LabTool() {
                 <div className="row"><span>Hue</span><span className="value">{Math.round(hueDeg)}°</span></div>
                 <input type="range" min={0} max={360} step={1}
                        value={hueDeg}
-                       onChange={e=>setHueDeg((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+                       onInput={e=>setHueDeg((e.currentTarget as HTMLInputElement).valueAsNumber)} />
               </div>
               <div className="field">
                 <div className="row"><span>Gloss</span><span className="value">{gloss.toFixed(2)}</span></div>
                 <input type="range" min={0} max={1} step={0.01}
                        value={gloss}
-                       onChange={e=>setGloss((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+                       onInput={e=>setGloss((e.currentTarget as HTMLInputElement).valueAsNumber)} />
               </div>
               <div className="field">
                 <div className="row"><span>Roughness</span><span className="value">{roughness.toFixed(2)}</span></div>
                 <input type="range" min={0} max={1} step={0.01}
                        value={roughness}
-                       onChange={e=>setRoughness((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+                       onInput={e=>setRoughness((e.currentTarget as HTMLInputElement).valueAsNumber)} />
               </div>
               <div className="field">
                 <div className="row"><span>Rim</span><span className="value">{rim.toFixed(2)}</span></div>
                 <input type="range" min={0} max={1} step={0.01}
                        value={rim}
-                       onChange={e=>setRim((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+                       onInput={e=>setRim((e.currentTarget as HTMLInputElement).valueAsNumber)} />
               </div>
             </div>
           )}
@@ -214,13 +219,13 @@ export default function LabTool() {
                 <div className="row"><span>Count</span><span className="value">{count}</span></div>
                 <input type="range" min={0} max={10} step={1}
                        value={count}
-                       onChange={e=>setCount((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+                       onInput={e=>setCount((e.currentTarget as HTMLInputElement).valueAsNumber)} />
               </div>
               <div className="field">
                 <div className="row"><span>Size</span><span className="value">{size.toFixed(2)}</span></div>
                 <input type="range" min={0.05} max={0.6} step={0.01}
                        value={size}
-                       onChange={e=>setSize((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+                       onInput={e=>setSize((e.currentTarget as HTMLInputElement).valueAsNumber)} />
               </div>
             </div>
           )}
@@ -230,13 +235,13 @@ export default function LabTool() {
                 <div className="row"><span>Intensity</span><span className="value">{trail.toFixed(2)}</span></div>
                 <input type="range" min={0} max={1} step={0.01}
                        value={trail}
-                       onChange={e=>setTrail((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+                       onInput={e=>setTrail((e.currentTarget as HTMLInputElement).valueAsNumber)} />
               </div>
               <div className="field">
                 <div className="row"><span>Length</span><span className="value">{length.toFixed(2)}</span></div>
                 <input type="range" min={0} max={1} step={0.01}
                        value={length}
-                       onChange={e=>setLength((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+                       onInput={e=>setLength((e.currentTarget as HTMLInputElement).valueAsNumber)} />
               </div>
             </div>
           )}
@@ -246,13 +251,13 @@ export default function LabTool() {
                 <div className="row"><span>Atmosphere</span><span className="value">{atmosphere.toFixed(2)}</span></div>
                 <input type="range" min={0.75} max={0.95} step={0.01}
                        value={atmosphere}
-                       onChange={e=>setAtmosphere((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+                       onInput={e=>setAtmosphere((e.currentTarget as HTMLInputElement).valueAsNumber)} />
               </div>
               <div className="field">
                 <div className="row"><span>Grain</span><span className="value">{grain.toFixed(2)}</span></div>
                 <input type="range" min={0} max={0.35} step={0.01}
                        value={grain}
-                       onChange={e=>setGrain((e.currentTarget as HTMLInputElement).valueAsNumber)} />
+                       onInput={e=>setGrain((e.currentTarget as HTMLInputElement).valueAsNumber)} />
               </div>
             </div>
           )}
@@ -279,7 +284,7 @@ export default function LabTool() {
           )}
           </div>
         </div>
-      </div>
+      </>
     );
-}
+  }
 
